@@ -1,6 +1,10 @@
 import numpy as np
 import matplotlib.pyplot as plt
+
+
 from waveresponse import DirectionalSpectrum
+
+
 def plot_wavespectrum(ds : DirectionalSpectrum):
 
 

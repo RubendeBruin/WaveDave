@@ -70,6 +70,46 @@ def bins_from_frequency_grid(bin_centers, absolute_tolerance=1e-3):
 
     # grid is not exponential and not constant
 
+    # Do we have a number of blocks with constant bin width?
+
+    w0 = bin_centers[1] - bin_centers[0]
+
+    b_previous = bin_centers[0]
+
+    widths = [w0]
+    changed = False
+
+    for b in bin_centers[1:]:
+        if abs(b - b_previous - w0)<1e-4:
+
+            if changed:
+                widths.append(w0)
+                widths.append(w0)
+                changed = False
+
+            widths.append(w0)
+            b_previous = b
+            continue
+
+        # we have a break
+        changed = True
+        w0 = b - b_previous
+        b_previous = b
+
+    # check if it worked
+    if len(widths) == nfreqs:
+
+        # check the distance from the left center to the right center
+        bins_width = np.sum(widths) - 0.5 * (widths[0] + widths[-1])
+        center_width = bin_centers[-1] - bin_centers[0]
+
+        if abs(bins_width - center_width) < 1e-4:
+            left = bin_centers - 0.5 * np.array(widths)
+            right = bin_centers + 0.5 * np.array(widths)
+            width = np.array(widths)
+            return left, right, width, bin_centers
+
+
     raise ValueError(
         "The type of frequency grid can not be detected. Clean input data or increase tolerance?"
     )
