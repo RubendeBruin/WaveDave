@@ -14,14 +14,14 @@ def sync_yscales(axes):
 
 def apply_default_style(fig, axes):
 
-    fig.set_facecolor('white')
-    fig.tight_layout()
+    if not isinstance(axes, (tuple, list)):
+        axes = [axes]
 
     # set font
     for ax in axes:
         for item in ([ax.title, ax.xaxis.label, ax.yaxis.label] +
-             ax.get_xticklabels() + ax.get_yticklabels()):
-            item.set_fontsize(8)
+            ax.get_xticklabels() + ax.get_yticklabels()):
+            item.set_fontsize(10)
             item.set_fontname('Arial')
 
     for ax in axes:
@@ -32,3 +32,14 @@ def apply_default_style(fig, axes):
 
 
     return fig
+
+def faded_line_color(factor : float):
+    """Return default color faded with factor. 0 = fully present, 1 = fully faded"""
+
+    rgb = (40/255, 40/255, 92/255)  # full color
+
+    deltas = [1 - c for c in rgb]
+
+    return [a + b * factor for a, b in zip(rgb, deltas)]
+
+

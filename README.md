@@ -31,7 +31,19 @@ plt.plot(forecast.time, forecast.Hs, label = "Forecast")
 
 times are datetime objects
 frequency is in Hz
-Direction is in degrees
+Direction is in degrees using coming-from convention
+
+
+
+## Timezone
+
+Internally all data is treated as UTC
+
+When plotting or reporting, the time is shifted with the amount of hours specified in `report_timezone_UTC_plus`.
+
+
+
+
 
 # Creation
 
@@ -81,9 +93,18 @@ WaveDave.to_smooth contains some magic to convert binned wave-spectra to smooth 
 
 plot_spectrum: plots a topview of the 2d spectrum
 
+plot_spectrum_bands
+
 plot_direction_over_time
 
 plot_spectrum_frequencies_over_time
+
+
+### helpers
+
+sync_ylimits
+
+apply_default_style
 
 
 

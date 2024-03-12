@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 
 from wavedave.plots.helpers import sync_yscales, apply_default_style
+from wavedave.plots.wavespectrum import plot_wavespectrum
 
 
 def test_plot_spectrum_frequencies_over_time(waves):
@@ -21,4 +22,8 @@ def test_plot_bands(waves):
 
 def test_plot_spec_2d(waves):
     waves.plot_spectrum_2d()
+    plt.show()
+
+def test_plot_spec_2d_raw(jonswap_hs35_tp10_from_45):
+    plot_wavespectrum(jonswap_hs35_tp10_from_45)
     plt.show()

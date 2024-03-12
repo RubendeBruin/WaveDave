@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 
 import numpy as np
@@ -20,11 +20,37 @@ class Spectra:
         """
 
         self.spectra : list[DirectionalSpectrum] = []  # series of DirectionalSpectrum objects
-        self.time = []     # timestamps in datetime format
+        self.time : list[datetime] = []     # timestamps in datetime format (UTC)
+
+        """Set the timezone for plots and reports"""
+        self.report_timezone_UTC_plus : float = 0
+        self.report_timezone_name = "UTC"
 
         # Define the data
         if wavespectra is not None:
             self._create_from_wavespectra(wavespectra)
+
+    @property
+    def time_in_timezone(self):
+        """Returns the time in the report timezone"""
+        # apply timezone by subtracting the offset in hours to the time
+        return [t - timedelta(hours=self.report_timezone_UTC_plus) for t in self.time]
+
+    def human_time(self, time: datetime):
+        """Returns the time in human readable format"""
+        # apply timezone by adding the offset in hours to the time
+        time = time + timedelta(hours=self.report_timezone_UTC_plus)
+
+        return time.strftime('%Y-%m-%d %H:%M')
+
+    def spectrum_number_nearest_to(self, local_time : datetime):
+        """Returns the number with time nearest to the given local time"""
+
+        utc_time = local_time + timedelta(hours=self.report_timezone_UTC_plus)
+
+        # find the nearest time
+        time_diff = [abs(t-utc_time) for t in self.time]
+        return np.argmin(time_diff)
 
 ## Properties
 
@@ -127,13 +153,6 @@ class Spectra:
 
         return R
 
-
-
-
-
-
-
-
             ## Creation methods
 
     def _create_from_wavespectra(self, wavespectra):
@@ -163,7 +182,12 @@ class Spectra:
             # add to the list
             self.spectra.append(ds)
 
-        self.time = wavespectra.time.data
+        # convert numpy.datetime64 to datetime objects
+        self.time = []
+        for t in wavespectra.time.data:
+            # Convert to datetime
+            timestamp = ((t - np.datetime64('1970-01-01T00:00:00')) / np.timedelta64(1, 's'))
+            self.time.append(datetime.fromtimestamp(timestamp))
 
     @staticmethod
     def from_octopus(filename : Path or str, ):
@@ -193,14 +217,16 @@ class Spectra:
                             end_date = end_date)
         return Spectra(wavespectra=data)
 
-## Plotting
+## Plotting =====================================================================
 
     def plot_spectrum_frequencies_over_time(self, ax = None, cmap = 'Blues', seconds=True):
         """Plots the frequency data over time"""
         import matplotlib.pyplot as plt
 
+        fig = None
         if ax is None:
             fig, ax = plt.subplots()
+
 
         data = self.freq_over_time
 
@@ -212,9 +238,11 @@ class Spectra:
             y_label = 'Frequency [Hz]'
 
         # plot the data
-        ax.contourf(self.time, y_data, data.transpose(), cmap=cmap)
+        ax.contourf(self.time_in_timezone, y_data, data.transpose(), cmap=cmap)
         ax.set_xlabel('Time')
         ax.set_ylabel(y_label)
+
+        return fig, ax
 
     def plot_direction_over_time(self, ax = None, cmap = 'Greys'):
         """Plots the frequency data over time"""
@@ -226,15 +254,17 @@ class Spectra:
         data = self.direction_over_time
 
         # plot the data
-        ax.contourf(self.time, self.dirs, data.transpose(), cmap=cmap)
+        ax.contourf(self.time_in_timezone, self.dirs, data.transpose(), cmap=cmap)
         ax.set_xlabel('Time')
         ax.set_ylabel('Direction')
 
-    def plot_spectrum_2d(self, ispec = 0 , cmap = 'Purples'):
+    def plot_spectrum_2d(self, ispec = 0 , cmap = 'Purples', title=''):
         """Plots the spectrum at a given time index"""
-        plot_wavespectrum(self.spectra[ispec], cmap=cmap)
 
-    def plot_spectrum_bands(self, split_periods : list[float], axes = None, plot_args = None):
+        above_title = f'{title}Time = {self.human_time(self.time[ispec])}\n'
+        return plot_wavespectrum(self.spectra[ispec], cmap=cmap, above_title=above_title)
+
+    def plot_spectrum_bands(self, split_periods : list[float], axes = None, plot_args = None, figsize = None):
         """Plots the significant wave height in bands of periods [s]
 
         If axes are supplied then those are used to add the plotted lines to
@@ -253,15 +283,15 @@ class Spectra:
         fig = None
         if axes is None:
             import matplotlib.pyplot as plt
-            fig, axes = plt.subplots(nrows=n+1, ncols=1)
+            fig, axes = plt.subplots(nrows=n+1, ncols=1, figsize = figsize)
 
             add_makeup = True
 
         # plot the total wave height at the top
-        axes[0].plot(self.time, self.Hs, **plot_args)
+        axes[0].plot(self.time_in_timezone, self.Hs, **plot_args)
 
         for i in range(n):
-            axes[i+1].plot(self.time, bands[i], **plot_args)
+            axes[i+1].plot(self.time_in_timezone, bands[i], **plot_args)
 
         if add_makeup:
 
@@ -270,13 +300,18 @@ class Spectra:
 
             for i in range(n):
                 if i==0:
-                    axes[i+1].set_title(f'Periods < {split_periods[i]} s')
+                    axes[i+1].set_ylabel(f'Periods < {split_periods[i]} s')
                 elif i == n-1:
-                    axes[i+1].set_title(f'Periods > {split_periods[i-1]} s')
-                    axes[i+1].set_xlabel('Time')
+                    axes[i+1].set_ylabel(f'Periods > {split_periods[i-1]} s')
                 else:
-                    axes[i+1].set_title(f'{split_periods[i-1]} - {split_periods[i]} s')
+                    axes[i+1].set_ylabel(f'{split_periods[i-1]} - {split_periods[i]} s')
 
-                axes[i+1].set_ylabel('Hs band [m]')
+            for i in range(1,n):
+                # remove tick labels for x axis
+                axes[i].set_xticklabels([])
+
+
+
+            axes[-1].set_xlabel('Time')
 
         return fig, axes
