@@ -5,23 +5,20 @@ import matplotlib.pyplot as plt
 from waveresponse import DirectionalSpectrum
 
 
-def plot_wavespectrum(ds : DirectionalSpectrum):
-
+def plot_wavespectrum(ds : DirectionalSpectrum, cmap = 'RdPu'):
 
     freq, dirs, vals = ds.grid(freq_hz=True, degrees=True)
     periods = 1/freq     # seconds
 
-    # Assuming vals, period, and dir are defined
-    # vals = np.array([...])
-    # period = np.array([...])
-    # dir = np.array([...])
+    # close the spectrum by repeating the first direction at the end
+    dirs = np.append(dirs, dirs[0]+360)
+
 
     # Convert angles from degrees to radians and adjust so that 0 is at the top
     angles = np.radians([(angle - 90) % 360 for angle in dirs])
 
-    # repeat first angle to close the plot
-    angles = np.append(angles, angles[0]+360)
-    # add the vals as well
+    #
+    # # add the vals as well
     vals = np.hstack((vals, vals[:,0:1]))
 
     # Create a meshgrid for period and angles
@@ -34,10 +31,4 @@ def plot_wavespectrum(ds : DirectionalSpectrum):
     ax.set_theta_direction(-1)  # Set angle direction to clockwise
 
     # Plot data
-    contour = ax.contourf(theta, r, vals.transpose(), cmap='Blues')
-
-    # Add a colorbar
-    plt.colorbar(contour)
-
-    # Show the plot
-    plt.show()
+    contour = ax.contourf(theta, r, vals.transpose(), cmap=cmap)

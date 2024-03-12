@@ -1,7 +1,7 @@
 import numpy as np
 from waveresponse import DirectionalSpectrum, WaveSpectrum
 
-from wavedave.to_smooth.smooth_old import to_continuous_1d
+from wavedave.to_smooth.smooth import to_continuous_1d
 
 
 
@@ -45,7 +45,7 @@ def to_WaveSpectrum(freq, dir, data):
 
         dir = np.append(0, dir)
 
-    ds = WaveSpectrum(freq=freq, dirs=dir, vals=spec2d_np.transpose(), degrees = True)
+    ds = WaveSpectrum(freq=freq, dirs=dir, vals=spec2d_np.transpose(), degrees = True, freq_hz=True)
 
     return ds
 
