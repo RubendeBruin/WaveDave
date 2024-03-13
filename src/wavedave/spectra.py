@@ -1,3 +1,4 @@
+import copy
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -29,6 +30,10 @@ class Spectra:
         # Define the data
         if wavespectra is not None:
             self._create_from_wavespectra(wavespectra)
+
+    def copy(self):
+        """Returns a copy of the object"""
+        return copy.deepcopy(self)
 
     @property
     def time_in_timezone(self):
@@ -70,6 +75,16 @@ class Spectra:
         return [ds.tz for ds in self.spectra]
 
     @property
+    def dirp(self):
+        """Peak direction [degrees]"""
+        return [ds.dirp(degrees=True) for ds in self.spectra]
+
+    @property
+    def dirm(self):
+        """Mean direction [degrees]"""
+        return [ds.dirm(degrees=True) for ds in self.spectra]
+
+    @property
     def dirs(self):
         """Wave directions [degrees]"""
         return self.spectra[0].dirs(degrees=True)
@@ -92,7 +107,7 @@ class Spectra:
 
         R = []
         for s in self.spectra:
-            grid, values = s.spectrum1d(axis=1)
+            grid, values = s.spectrum1d(axis=1, freq_hz=True, degrees=True)
             R.append(values)
 
         return np.array(R, dtype=float)
@@ -113,47 +128,50 @@ class Spectra:
 
         return np.array(R, dtype=float)
 
-    def Hs_bands(self, split_periods : list[float]):
-        """Returns the significant wave height in bands of periods [s]
+    def bands(self,  split_periods : list[float]):
+        """Returns new Spectra objects with the data split in bands of periods [s]"""
 
-        shape(n_bands, n_spectra)"""
-
-        # assert that the periods are in the right order
         assert np.all(np.diff(split_periods) > 0), "The periods should be in increasing order"
 
         # create the bands
-        split_hz = 1/np.array(split_periods)
+        split_hz = 1 / np.array(split_periods)
 
-        bands = [(np.inf, split_hz[0])]
-        for i in range(len(split_hz)-1):
-            bands.append((split_hz[i], split_hz[i+1]))
-        bands.append((split_hz[-1], 0))
+        band0 = self.bandpassed(freq_min=split_hz[0])
+        bands = [band0]
+        for i in range(len(split_hz) - 1):
+            bands.append(self.bandpassed(freq_min=split_hz[i + 1], freq_max=split_hz[i]))
+        bands.append(self.bandpassed(freq_max=split_hz[-1]))
 
-        # new grid with datapoints at the splits
-        new_grid = np.concatenate([self.freq, split_hz])
-        new_grid.sort()
+        return bands
 
-        # pre-alloc
-        n_bands = len(bands)
-        R = np.zeros((n_bands,len(self.spectra)))
 
-        # fill
-        for i_spec,s in enumerate(self.spectra):
+    def Hs_bands(self, split_periods : list[float]):
+        """Returns the significant wave height in bands of periods [s]"""
 
-            # squash to non-directional
-            grid, values = s.spectrum1d(axis=1)
+        bands = self.bands(split_periods)
+        return [b.Hs for b in bands]
 
-            # add splits using interpolation
-            new_values = np.interp(new_grid, grid, values)
 
-            for i_band,band in enumerate(bands):
-                idx = (new_grid <= band[0]) & (new_grid >= band[1])
-                m0 = np.trapz(new_values[idx], new_grid[idx])
-                R[i_band,i_spec] = 4 * np.sqrt(m0)
+## Methods
 
-        return R
+    def bandpassed(self, freq_min : float = None, freq_max : float = None):
+        """Returns a new Spectra object (a copy) with the bandpassed data"""
 
-            ## Creation methods
+        # construct new data
+        new_spectra = []
+        for s in self.spectra:
+            new_spectra.append(s.bandpassed(freq_min = freq_min, freq_max = freq_max))
+
+
+        # create the new object
+        new = self.copy()
+        new.spectra = new_spectra
+
+        return new
+
+
+
+## Creation methods
 
     def _create_from_wavespectra(self, wavespectra):
         # Create the data
@@ -219,7 +237,7 @@ class Spectra:
 
 ## Plotting =====================================================================
 
-    def plot_spectrum_frequencies_over_time(self, ax = None, cmap = 'Blues', seconds=True):
+    def plot_spectrum_frequencies_over_time(self, ax = None, cmap = 'Blues', seconds=True, levels = None):
         """Plots the frequency data over time"""
         import matplotlib.pyplot as plt
 
@@ -238,7 +256,9 @@ class Spectra:
             y_label = 'Frequency [Hz]'
 
         # plot the data
-        ax.contourf(self.time_in_timezone, y_data, data.transpose(), cmap=cmap)
+        if levels is None:
+            levels = np.linspace(data.min(), data.max(), 20)
+        ax.contourf(self.time_in_timezone, y_data, data.transpose(), cmap=cmap, levels=levels)
         ax.set_xlabel('Time')
         ax.set_ylabel(y_label)
 
@@ -254,44 +274,93 @@ class Spectra:
         data = self.direction_over_time
 
         # plot the data
-        ax.contourf(self.time_in_timezone, self.dirs, data.transpose(), cmap=cmap)
+        levels = np.linspace(data.min(), data.max(), 20)
+        ax.contourf(self.time_in_timezone, self.dirs, data.transpose(), cmap=cmap, levels=levels, )
+
         ax.set_xlabel('Time')
         ax.set_ylabel('Direction')
 
-    def plot_spectrum_2d(self, ispec = 0 , cmap = 'Purples', title=''):
+    def plot_spectrum_2d(self, ispec = 0 , cmap = 'Purples', title='', ax=None, levels = None):
         """Plots the spectrum at a given time index"""
 
-        above_title = f'{title}Time = {self.human_time(self.time[ispec])}\n'
-        return plot_wavespectrum(self.spectra[ispec], cmap=cmap, above_title=above_title)
+        above_title = f'{title}{self.human_time(self.time[ispec])}\n'
+        return plot_wavespectrum(self.spectra[ispec], cmap=cmap, above_title=above_title, ax=ax, levels = levels)
 
-    def plot_spectrum_bands(self, split_periods : list[float], axes = None, plot_args = None, figsize = None):
+    def plot_spectrum_bands(self, split_periods : list[float],
+                            fig=None,
+                            axes = None,
+                            plot_args = None,
+                            figsize = None,
+                            label = None,
+                            do_quiver = True,
+                            quiver_color = 'k'):
         """Plots the significant wave height in bands of periods [s]
 
         If axes are supplied then those are used to add the plotted lines to
 
         If not then a new figure is created, and the axes are returned and axis titles are added.
+
+
+        :returns
+
+        fig, axes
         """
 
         if plot_args is None:
             plot_args = {}
 
-        bands = self.Hs_bands(split_periods)
+        bands = self.bands(split_periods)
 
         n = len(bands)
 
         add_makeup = False
-        fig = None
+
         if axes is None:
             import matplotlib.pyplot as plt
             fig, axes = plt.subplots(nrows=n+1, ncols=1, figsize = figsize)
-
             add_makeup = True
 
-        # plot the total wave height at the top
-        axes[0].plot(self.time_in_timezone, self.Hs, **plot_args)
+        spectra = [self] + bands
 
-        for i in range(n):
-            axes[i+1].plot(self.time_in_timezone, bands[i], **plot_args)
+        for ax, spec in zip(axes, spectra):
+
+            # plot the total wave height at the top
+            ax.plot(spec.time_in_timezone, spec.Hs,
+                    label = label,
+                    **plot_args)
+
+
+            if do_quiver:
+                # add quiver
+                directions_deg = spec.dirp
+
+                # quiver needs:
+                # x, y, u, v arrays
+                # x and y are the position of the arrow
+                # u and v are the direction of the arrow
+
+                qx = []
+                qy = []
+                qu = []
+                qv = []
+                q_scale = 40
+
+                for i in range(len(spec.time)):
+                    qx.append(spec.time_in_timezone[i])
+                    qy.append(spec.Hs[i])
+                    qu.append(-np.sin(np.radians(directions_deg[i])))
+                    qv.append(-np.cos(np.radians(directions_deg[i])))
+
+                ax.quiver(qx, qy, qu, qv,
+                               angles='xy',
+                               scale_units='width',
+                               headaxislength = 3,
+                               headlength = 10,
+                               headwidth = 6,
+                               minlength = 0.1,
+                               scale = q_scale,
+                               width=0.002,
+                               color = quiver_color)
 
         if add_makeup:
 
@@ -300,17 +369,19 @@ class Spectra:
 
             for i in range(n):
                 if i==0:
-                    axes[i+1].set_ylabel(f'Periods < {split_periods[i]} s')
+                    axes[i+1].set_title(f'Periods < {split_periods[i]} s')
                 elif i == n-1:
-                    axes[i+1].set_ylabel(f'Periods > {split_periods[i-1]} s')
+                    axes[i+1].set_title(f'Periods > {split_periods[i-1]} s')
                 else:
-                    axes[i+1].set_ylabel(f'{split_periods[i-1]} - {split_periods[i]} s')
+                    axes[i+1].set_title(f'Periods {split_periods[i-1]} - {split_periods[i]} s')
 
             for i in range(1,n):
                 # remove tick labels for x axis
                 axes[i].set_xticklabels([])
 
 
+            for a in axes:
+                a.set_ylabel('Hs [m]')
 
             axes[-1].set_xlabel('Time')
 

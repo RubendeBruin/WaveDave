@@ -1,3 +1,6 @@
+import numpy as np
+
+
 def sync_yscales(axes):
     """Synchronizes the y-axis of a list of axes"""
 
@@ -14,7 +17,7 @@ def sync_yscales(axes):
 
 def apply_default_style(fig, axes):
 
-    if not isinstance(axes, (tuple, list)):
+    if not isinstance(axes, (tuple, list, np.ndarray)):
         axes = [axes]
 
     # set font

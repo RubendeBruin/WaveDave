@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from waveresponse import DirectionalSpectrum
 
 
-def plot_wavespectrum(ds : DirectionalSpectrum, cmap = 'RdPu', above_title = '', do_periods = True, max_period = 20):
+def plot_wavespectrum(ds : DirectionalSpectrum, cmap = 'RdPu', above_title = '', do_periods = True, max_period = 15, ax=None, levels = None):
 
     freq, dirs, vals = ds.grid(freq_hz=True, degrees=True)
 
@@ -29,8 +29,11 @@ def plot_wavespectrum(ds : DirectionalSpectrum, cmap = 'RdPu', above_title = '',
     r, theta = np.meshgrid(y_value, angles)
 
     # Create a polar plot
-    fig = plt.figure(figsize=(6, 6))
-    ax = fig.add_subplot(111, polar=True)
+    fig = None
+    if ax is None:
+        fig = plt.figure(figsize=(6, 6))
+        ax = fig.add_subplot(111, polar=True)
+
     ax.set_theta_zero_location('N')  # Set 0 degrees to the top
     ax.set_theta_direction(-1)  # Set angle direction to clockwise
 
@@ -39,7 +42,12 @@ def plot_wavespectrum(ds : DirectionalSpectrum, cmap = 'RdPu', above_title = '',
             ax.set_ylim(0, max_period)
 
     # Plot data
-    contour = ax.contourf(theta, r, vals.transpose(), cmap=cmap)
+    if levels is None:
+        levels = np.linspace(0, np.nanmax(vals), 20)
+
+    print(f'levels = {levels[-1]}')
+    print(f'max(vals) = {np.nanmax(vals)}')
+    ax.contourf(theta, r, vals.transpose(), cmap=cmap, levels=levels)
 
     ax.set_title(f'{above_title}Hs = {ds.hs:.2f}m '
                  f'Tp = {ds.tp:.1f}s'

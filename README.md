@@ -1,5 +1,9 @@
 # WaveDave
-Practical marine waves and wave response calculations
+Practical marine waves and wave response calculations and comparisons.
+
+The name WaveDave is a shameless reference to [DAVE](https://usedave.nl) from the same author.
+
+
 
 ## Introduction
 
