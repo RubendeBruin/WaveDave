@@ -1,12 +1,16 @@
 from datetime import datetime
 from pathlib import Path
 
-from wavedave import Spectra
-from wavedave.reports.metocean import MetoceanSource, MetoceanReport, Event
+from wavedave import Event
+from wavedave import Spectra, IntegratedForecast
+from wavedave.reports.metocean import MetoceanSource, MetoceanReport
 
 dir = Path(__file__).parent
 
 filename = dir / 'datafiles' / 'infoplaza.csv'
+if_filename = dir / 'datafiles' / 'marine_forecast_report_48127014-240311-110049_20240311.csv'
+
+
 forecast1 = Spectra.from_octopus(filename)
 forecast2 = Spectra.from_octopus(filename)
 forecast3 = Spectra.from_octopus(filename)
@@ -40,15 +44,26 @@ buoy = MetoceanSource(description="Buoy",
                         data=[buoy],
                         is_buoy=True)
 
+integrated_forecast = IntegratedForecast(if_filename)
+
 
 report = MetoceanReport()
 
-report.header_text = "<br>"
+report.header_text = "WaveDave4"
 
 report.add_source(forecast)
 report.add_source(buoy)
 
 report.events = [breakfast, lunch, dinner, bedtime]
+
+# --- integrated forecast
+
+report.integrated_forecast = integrated_forecast  # add the integrated forecast (plotted if added)
+report.integrated_plots.append("Significant wave height [m]") # single value interpreted as a time series
+report.integrated_plots.append("Wave peak period [s]")
+report.integrated_plots.append(["10m wind speed [m/s]",
+                                "Wind direction [deg]"])  # two values interpreted as value , direction
+report.integrated_plots.append("Temperature [deg C]")
 
 # --- breakdown settings
 

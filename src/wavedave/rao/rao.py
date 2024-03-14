@@ -17,6 +17,10 @@ class RAO(wr.RAO):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+        description = "Boot 10"
+        mode = "heave"
+        response_unit = "m"   # unit of response , so without the /m for waves.
+
     def save(self, filename):
         """Save the RAO to a file"""
         pickle.dump(self, open(filename, "wb"))

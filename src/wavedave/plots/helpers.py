@@ -36,13 +36,11 @@ def apply_default_style(fig, axes):
 
     return fig
 
-def faded_line_color(factor : float):
+def faded_line_color(factor : float, color = (40/255, 40/255, 92/255)):
     """Return default color faded with factor. 0 = fully present, 1 = fully faded"""
 
-    rgb = (40/255, 40/255, 92/255)  # full color
+    deltas = [1 - c for c in color]
 
-    deltas = [1 - c for c in rgb]
-
-    return [a + b * factor for a, b in zip(rgb, deltas)]
+    return [a + b * factor for a, b in zip(color, deltas)]
 
 
