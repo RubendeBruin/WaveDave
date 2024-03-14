@@ -39,7 +39,8 @@ class MetoceanReport:
         blue = (40 / 255, 40 / 255, 92 / 255)
         yellow = (255 / 255, 214 / 255, 0 / 255)
         colors = ['white', yellow, blue]
-        self.cmap = LinearSegmentedColormap.from_list("mycmap", colors)
+
+        self.cmap = LinearSegmentedColormap.from_list("metocean", colors)
         self.color_accent = yellow
         self.color_buoy_quiver = (255 / 500, 214 / 500, 0 / 500)
 
@@ -55,6 +56,11 @@ class MetoceanReport:
         self.breakdown_text_below = ""
 
         self.breakdown_show_events = True
+
+        self.breakdown_directions_forecast = True
+        self.breakdown_directions_buoy = True
+        self.breakdown_directions_buoy_spacing = 10 # one arrow every .... samples
+
 
         # ====== Energy [ Spectral Energy Map And Roseplots] ======
         #                 based on forecast only
@@ -109,10 +115,14 @@ class MetoceanReport:
                     plot_args['markeredgecolor'] = 'k'
                     plot_args['linestyle'] = 'none'
                     quiver_color = self.color_buoy_quiver
+                    do_quiver = self.breakdown_directions_buoy
+                    quiver_spacing = self.breakdown_directions_buoy_spacing
                 else:
                     color = faded_line_color(i / n_series)
                     plot_args['color'] = color
                     quiver_color = color
+                    do_quiver = self.breakdown_directions_forecast
+                    quiver_spacing = 1
 
 
                 counter += 1
@@ -121,8 +131,9 @@ class MetoceanReport:
                                                      axes=axes,
                                                      split_periods=self.breakdown_split_periods_s,
                                                      plot_args=plot_args,
-                                                     label = source.description,
-                                                     do_quiver = i==0,
+                                                     label = source.description + ' ' + data.description_source(),
+                                                     do_quiver = (i==0) and do_quiver,
+                                                     quiver_spacing = quiver_spacing,
                                                      quiver_color=quiver_color,)
 
         # add legend below lowest axes
