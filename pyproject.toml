@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=61.0", "setuptools-scm"]
+requires = ["setuptools>=68.0", "setuptools_scm"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -21,6 +21,8 @@ classifiers = [
 Homepage = "https://github.com/RubendeBruin/WaveDave"
 Issues = "https://github.com/RubendeBruin/WaveDave/issues"
 
+[tool.setuptools.packages.find]
+where = ["src"]
 
 [tool.setuptools.package-data]
-src = ["wavedave/pdf/*.png"]
+wavedave = ["*.png"]
