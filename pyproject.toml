@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "WaveDave"
+version = "0.0.1"
+authors = [
+    { name="Ruben de Bruin", email="info@rdbr.nl" },
+]
+description = "practical marine waves and wave response calculations."
+readme = "README.md"
+requires-python = ">=3.9"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+Homepage = "https://github.com/RubendeBruin/WaveDave"
+Issues = "https://github.com/RubendeBruin/WaveDave/issues"
