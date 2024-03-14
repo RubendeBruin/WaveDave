@@ -1,8 +1,6 @@
 from datetime import datetime
 from pathlib import Path
 
-from matplotlib import pyplot as plt
-
 from wavedave import Spectra
 from wavedave.reports.metocean import MetoceanSource, MetoceanReport, Event
 

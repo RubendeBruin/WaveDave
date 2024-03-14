@@ -20,3 +20,9 @@ classifiers = [
 [project.urls]
 Homepage = "https://github.com/RubendeBruin/WaveDave"
 Issues = "https://github.com/RubendeBruin/WaveDave/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+mypkg = ["*.png"]

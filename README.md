@@ -12,6 +12,9 @@ WaveDave is a Python package for practical marine waves and wave response calcul
 It heavily relies on, and combines the functionality of the following packages:
 - [wavespectra](https://wavespectra.readthedocs.io/en/latest/)
 - [waveresponse](https://docs.4insight.io/waveresponse/python/latest/index.html)
+pdf generation is included using:
+- [fpdf2](https://github.com/py-pdf/fpdf2)
+
 
 WaveSpectra is used for importing wave-spectra from real-life sources such as forecasts, models or measurements buoys.
 WaveResponse is used for plotting and combining the wave-spectra with RAOs.
@@ -27,15 +30,17 @@ Example:
 from wavedave import Spectra
 import matplotlib.pyplot as plt
 
-forecast = Spectra.from_octopus('forecasefile.csv')
+forecast = Spectra.from_octopus('forecastfile.csv')
 plt.plot(forecast.time, forecast.Hs, label = "Forecast")
 ```
 
 # Conventions
 
 times are datetime objects
+time is in UTC
 frequency is in Hz
 Direction is in degrees using coming-from convention
+For wave-spectra the directions are compass directions (0=N, 90=E, 180=S, 270=W)
 
 
 
