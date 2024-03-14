@@ -23,4 +23,4 @@ Issues = "https://github.com/RubendeBruin/WaveDave/issues"
 
 
 [tool.setuptools.package-data]
-src = ["*.png"]
+src = ["wavedave/pdf/*.png"]
