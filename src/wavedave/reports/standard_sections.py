@@ -77,7 +77,7 @@ class StandardSection(ToPDFMixin):
         raise ValueError("Abstract - This method should be overridden")
 
     def generate_pdf(self, report: WaveDavePDF):
-        report.add_new_page_if_needed()
+        report._add_new_page_if_needed()
 
         report.set_x(report.l_margin + self.text_offset)
         report.write_html(self.header_text)

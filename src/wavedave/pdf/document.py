@@ -41,7 +41,7 @@ class PageBreakIfNeeded(ToPDFMixin):
     def __init__(self, margin=0.5):
         self.margin = margin
     def generate_pdf(self, report):
-        report.add_new_page_if_needed(self.margin)
+        report._add_new_page_if_needed(self.margin)
 
 class WaveDavePDF(fpdf.FPDF):
     def __init__(self):
@@ -104,7 +104,7 @@ class WaveDavePDF(fpdf.FPDF):
         self.set_y(-18)
         self.image(LOGO, x=logo_x, w=15)
 
-    def add_new_page_if_needed(self, margin=0.5):
+    def _add_new_page_if_needed(self, margin=0.5):
         """Adds a new page if we are below the middle of the page."""
         if self.get_y() > margin * self.eph:
             self.add_page()
