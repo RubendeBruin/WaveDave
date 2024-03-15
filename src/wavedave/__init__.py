@@ -1,14 +1,13 @@
 # This is Wave Dave
 # ~~~~~~~~~~~~~~~~~~~
 
-import waveresponse
-import wavespectra
-
 from .spectra import Spectra
-from .pdf.document import WaveDavePDF
+from .pdf.document import WaveDavePDF, Text, Header, PageBreakIfNeeded
 from .plots.elements import LineSource, Graph, SharedX, Event, Limit, Figure
-from .reports.metocean import MetoceanReport, MetoceanSource
+from .reports.standard_sections import MetoceanSource, BreakdownSection, EnergySection
+
 from .integrated_forecast.integrated_forecast import IntegratedForecast
 import wavedave.settings as Settings
 
-__all__ = ['Spectra', 'WaveDavePDF', 'MetoceanReport', 'MetoceanSource', 'Event', 'IntegratedForecast', 'Settings', 'Graph','LineSource', 'SharedX', 'Limit','Figure']
+__all__ = ['Spectra', 'WaveDavePDF', 'Text', 'Header', 'PageBreakIfNeeded',
+           'BreakdownSection', 'MetoceanSource', 'Event', 'EnergySection', 'IntegratedForecast', 'Settings', 'Graph','LineSource', 'SharedX', 'Limit','Figure']

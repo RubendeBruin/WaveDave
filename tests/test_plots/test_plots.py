@@ -18,12 +18,12 @@ def test_plot_bands(waves):
     sync_yscales(axes)
     apply_default_style(fig, axes)
     fig.tight_layout()
-    plt.show()
+    # plt.show()
 
 def test_plot_spec_2d(waves):
     waves.plot_spectrum_2d()
-    plt.show()
+    # plt.show()
 
 def test_plot_spec_2d_raw(jonswap_hs35_tp10_from_45):
     plot_wavespectrum(jonswap_hs35_tp10_from_45)
-    plt.show()
+    # plt.show()

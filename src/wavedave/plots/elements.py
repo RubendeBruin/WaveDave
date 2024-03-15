@@ -4,6 +4,7 @@ from enum import Enum
 import matplotlib.pyplot as plt
 import numpy as np
 
+from wavedave.pdf.document import ToPDFMixin, WaveDavePDF
 from wavedave.plots.helpers import sync_yscales, apply_default_style, faded_line_color
 
 
@@ -229,14 +230,14 @@ class Graph:
 
 
 @dataclass
-class Figure:
+class Figure(ToPDFMixin):
     graphs: Graph or list[Graph]
 
     events: list[Event] or None = None
     share_x: SharedX = SharedX.NONE
     share_y: bool = False  # share y-axis limits (union)
     legend: bool = False  # adds legend to the figure
-    legend_force_full_context :bool = False  # legend = label + source description
+    legend_force_full_context: bool = False  # legend = label + source description
     figsize: tuple = (10, 5)
 
     def __post_init__(self):
@@ -291,12 +292,20 @@ class Figure:
 
             # if all labels are the same, then replace then with the source label
             if len(set(labels)) == 1:
-                labels = [source.datasource_description for source in self.graphs[0].source]
+                labels = [
+                    source.datasource_description for source in self.graphs[0].source
+                ]
 
             if self.legend_force_full_context:
                 labels = [source.label_full_context for source in self.graphs[0].source]
 
-            ax.legend(handles, labels, loc="upper left", bbox_to_anchor=(0, -0.2), frameon=False)
+            ax.legend(
+                handles,
+                labels,
+                loc="upper left",
+                bbox_to_anchor=(0, -0.2),
+                frameon=False,
+            )
 
         # add events
         if self.events:
@@ -310,15 +319,14 @@ class Figure:
 
         return fig
 
+    def generate_pdf(self, report: WaveDavePDF):
+        fig = self.render()
 
-@dataclass
-class Page:
-    figure: Figure
-
-    heading: str = ""
-    text_above: str = ""
-    text_below: str = ""
-    text_left: float = 17
+        # save to svg and add to report
+        filename = report.temp_folder / "figure.svg"
+        fig.savefig(str(filename))
+        report.set_x(report.l_margin)
+        report.image(filename, w=report.epw)
 
 
 if __name__ == "__main__":

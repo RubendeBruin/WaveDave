@@ -295,7 +295,7 @@ class Spectra:
 
     # Getting LineSources
 
-    def give_linesource(self, y_prop, dir_prop = None, unit = None):
+    def give_source(self, y_prop, dir_prop = None, unit = None):
         """Returns a LineSource object"""
         from wavedave.plots.elements import LineSource
 
@@ -314,10 +314,10 @@ class Spectra:
                           unit = unit)
 
     def give_Hs_LineSource(self):
-        return self.give_linesource("Hs", dir_prop="dirp", unit = "m")
+        return self.give_source("Hs", dir_prop="dirp", unit = "m")
 
     def give_Tp_LineSource(self):
-        return self.give_linesource("Tp", unit = "s")
+        return self.give_source("Tp", unit = "s")
 
     # Plotting =====================================================================
 

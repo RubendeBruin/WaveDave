@@ -117,15 +117,41 @@ temperature_with_limit = Graph(source = temperature, limit=too_hot)
 
 fig7 = Figure([wind_with_limit, temperature_with_limit], events = [breakfast, lunch, dinner, bedtime])
 
+# Make a pdf report
+
+report = WaveDavePDF()
+
+report.add_header("Just some examples of custom plots")
+report.add_text("Colors default to those defined in Settings, but can be changed manually per LineSource:")
+report.add(fig1)
+
+report.add_page_break()
+report.add_header("FigSize")
+report.add_text("The figsize can be set per figure. Setting it too low will make the text relatively large, like so:")
 
 
+report.add(fig2)
 
-fig1.render()
-fig2.render()
-fig3.render()
-fig4.render()
-fig5.render()
-fig6.render()
-fig7.render()
+report.add_page_break()
+report.add_header("Legends")
+report.add_text("Legends are added only to the lowest graph of a figure. But you may add more figures to a page although you "
+                "may need to tweak the figsize to make them fit. <p>Figures are created over the full widht of the page, the aspect "
+                "is used to calculate the height.</p>")
+report.add(fig3)
+report.add(fig4)
 
-plt.show()
+report.add_page_break()
+report.add_header("Shared x-axis and/or y-axis options")
+report.add_text("Y axis shared, X axis not")
+report.add(fig5)
+report.add_text("X axis shared, Y axis not")
+report.add(fig6)
+
+report.add_page_break()
+report.add_header("Example of using limits and events")
+report.add_text("Events are added per Figure. They are identical for all graphs in the figure.<p>Limits are added to individual graphs.")
+
+report.add(fig7)
+
+
+report.open()
