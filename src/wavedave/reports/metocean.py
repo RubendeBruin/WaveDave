@@ -11,6 +11,8 @@ from ..pdf.document import WaveDavePDF
 from ..plots.helpers import faded_line_color, sync_yscales, apply_default_style
 from ..spectra import Spectra
 
+import wavedave.settings as Settings
+
 
 @dataclass
 class MetoceanSource:
@@ -38,14 +40,13 @@ class MetoceanReport:
 
         # ===== Colors ======
 
-        blue = (40 / 255, 40 / 255, 92 / 255)
-        yellow = (255 / 255, 214 / 255, 0 / 255)
-        colors = ["white", yellow, blue]
+
+        colors = ["white", Settings.COLOR_SECONDARY, Settings.COLOR_MAIN]
 
         self.cmap = LinearSegmentedColormap.from_list("metocean", colors)
-        self.color = blue
-        self.color_accent = yellow
-        self.color_buoy_quiver = (255 / 500, 214 / 500, 0 / 500)
+        self.color = Settings.COLOR_MAIN
+        self.color_accent = Settings.COLOR_SECONDARY
+        self.color_buoy_quiver = (int(c/2) for c in Settings.COLOR_SECONDARY)
 
         # ===== Integrated fcst =====
 

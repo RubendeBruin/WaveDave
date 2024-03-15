@@ -1,0 +1,131 @@
+from datetime import datetime
+from pathlib import Path
+
+from matplotlib import pyplot as plt
+
+from wavedave import *
+
+dir = Path(__file__).parent
+filename = dir / 'datafiles' / 'marine_forecast_report_20240311.csv'
+filename2 = dir / 'datafiles' / 'marine_forecast_report_20240310.csv'
+
+spec_filename = dir / 'datafiles' / 'infoplaza.csv'
+
+
+spectral_forecast = Spectra.from_octopus(spec_filename)
+
+
+# Read the forecast
+
+integrated_forecast = IntegratedForecast(filename)
+
+# print the available columns
+integrated_forecast.print()
+
+# get the sources that we want,
+# use the column names from the printout
+max_waveheight = integrated_forecast.give_source("Maximum wave height [m]")
+sig_waveheight = integrated_forecast.give_source("Significant wave height [m]")
+sig_waveheight.color = "red"
+
+temperature = integrated_forecast.give_source("Temperature [deg C]")
+
+# example with direction
+wind10 = integrated_forecast.give_source("10m wind speed [m/s]", "Wind direction [deg]")
+wind10.dir_plot_spacing = 5
+
+# example of scaling
+wind_at_top = integrated_forecast.give_source("10m wind speed [m/s]", "Wind direction [deg]")
+wind_at_top.label = "Wind at top of crane"
+wind_at_top.dir_plot_spacing = 5
+wind_at_top.scale(1.5)
+
+# older forecast with a different time-format
+yesterdays_forecast = IntegratedForecast(filename2, dateformat="%m/%d/%Y %H:%M")
+yesterdays_max_waveheight = yesterdays_forecast.give_source("Maximum wave height [m]")
+yesterdays_max_waveheight.fade_line_color(0.5)
+
+yesterdays_wind = yesterdays_forecast.give_source("10m wind speed [m/s]", "Wind direction [deg]")
+yesterdays_wind.fade_line_color(0.5)
+
+# Make a figure using elements
+
+# Figure with a single plot
+waveheights = Graph(source = [max_waveheight, sig_waveheight], title="Wave heights")
+fig1 = Figure(graphs = waveheights,
+             legend=True,)
+
+
+# Figure with multiple plots
+temp = Graph(source = temperature)
+wind = Graph(source = wind10)
+wind_at_top = Graph(source = wind_at_top)
+
+fig2 = Figure([temp, wind, wind_at_top],
+             figsize = (5,6))
+
+# Figure with multiple plots and shared x-axis
+# Note that legends are only added to the lowest plot.
+
+waveheight_comparison = Graph(source = [max_waveheight, yesterdays_max_waveheight])
+wind_comparison = Graph(source = [wind10, yesterdays_wind])
+
+fig3 = Figure([waveheight_comparison, wind_comparison],
+             share_x = SharedX.UNION,
+             legend = True,
+             figsize = (10,6))
+
+
+# Spectra can also be used as a source
+Hs_spectral = spectral_forecast.give_Hs_LineSource()
+Hs_comparison = Graph(source = [sig_waveheight, Hs_spectral])
+
+fig4 = Figure(Hs_comparison,
+              legend_force_full_context=True)  # this automatically sets legend to True as well
+
+# X-axis alignment
+Hs_spectral_graph = Graph(source = Hs_spectral, title = "Spectral wave height [m]")
+Hs_integrated_graph = Graph(source = sig_waveheight, title = "Integrated wave height [m]")
+
+fig5 = Figure([Hs_spectral_graph, Hs_integrated_graph], share_y = True)
+
+fig6 = Figure([Hs_spectral_graph, Hs_integrated_graph],share_x=SharedX.UNION)
+
+# ==== Limits and Events =====
+
+# events
+breakfast = Event(description="Breakfast",
+                  when = datetime(2024,3,13,0,12,0))
+lunch = Event(description="Lunch",
+              when = datetime(2024,3,14,0,0,0))
+dinner = Event(description="Dinner",
+               when = datetime(2024,3,15,0,5,45))
+
+bedtime = Event(description="Bedtime",
+               when = datetime(2024,3,18,11,0,0))
+
+
+# limits
+too_hot = Limit("Max temperature", 15)
+wind = Limit("Max wind", 10)
+
+# limits are added to Graphs
+# events are added to a Figure
+
+wind_with_limit = Graph(source = wind10, limit = wind)
+temperature_with_limit = Graph(source = temperature, limit=too_hot)
+
+fig7 = Figure([wind_with_limit, temperature_with_limit], events = [breakfast, lunch, dinner, bedtime])
+
+
+
+
+fig1.render()
+fig2.render()
+fig3.render()
+fig4.render()
+fig5.render()
+fig6.render()
+fig7.render()
+
+plt.show()

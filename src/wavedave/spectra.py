@@ -269,7 +269,10 @@ class Spectra:
         # noinspection PyUnresolvedReferences
         from wavespectra import read_octopus
 
-        data = read_octopus(str(filename))
+        try:
+            data = read_octopus(str(filename))
+        except Exception as e:
+            raise ValueError(f"Could not read file {filename} which is expected to be in the 'octopus' format containing 2D spectra.\nGot the following error: {e}")
 
         return Spectra(wavespectra=data, metadata={"filename": filename})
 
@@ -289,6 +292,32 @@ class Spectra:
 
         data = read_obscape(directory, start_date=start_date, end_date=end_date)
         return Spectra(wavespectra=data)
+
+    # Getting LineSources
+
+    def give_source(self, y_prop, dir_prop = None, unit = None):
+        """Returns a LineSource object"""
+        from wavedave.plots.elements import LineSource
+
+        y = getattr(self, y_prop)
+
+        if dir_prop is not None:
+            dir = getattr(self, dir_prop)
+        else:
+            dir = None
+
+        return LineSource(label = y_prop,
+                          x = self.time_in_timezone,
+                          y = y,
+                          dir = dir,
+                          datasource_description=self.description_source(),
+                          unit = unit)
+
+    def give_Hs_LineSource(self):
+        return self.give_source("Hs", dir_prop="dirp", unit = "m")
+
+    def give_Tp_LineSource(self):
+        return self.give_source("Tp", unit = "s")
 
     # Plotting =====================================================================
 

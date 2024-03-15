@@ -119,3 +119,57 @@ apply_default_style
 
 
 
+# Making figures
+
+WaveDave contains `Elements` to construct custom standardized figures from custom data-sources. These figures can contain limits (horizontal lines) and events (vertical lines)
+
+
+
+A `Figure` contains one or more `Graphs` (subplots). Optionally it contains `limits` and `events`. 
+
+Figure has some settings to adjust to overall appearance:
+
+- The x and y axes of the individuals graphs may be synchronized.
+- The overall figure size may be specified. 
+- Legends can be included below the lowest subplot.
+
+Every `Graph` contains one or mode `LineSources`.  If units or statistics-types are specified on the line-sources then these shall be identical for all lines sources.
+
+A `LineSource` can be created from Spectra, Responses, IntegratedForecasts, Measurements, or manually. A linesource can have plot-options specified and may have a directions which will then be plotted as quivers.
+
+
+
+## Legends
+
+Legends are by default based on the .label properties of the LineSources. If all labels are the same then these are replaced by the datasource_description property of the LineSources.
+
+
+
+## Title
+
+Graph title default to the name of the datasource
+
+
+
+## Getting LineSources
+
+`LineSources` can be obtained from
+
+- Integrated forecasts
+  - using the column names
+  - the filename is added as datasource_description
+- Spectra
+  - 
+
+
+
+# Making pages
+
+A page looks as follows:
+
+- heading
+- text
+- figure (s)
+- text
+
+The figures are scaled to the page width. It is your own responsibility to make it fit on one or more pages nicely.
