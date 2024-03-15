@@ -121,11 +121,16 @@ apply_default_style
 
 # Making figures
 
-WaveDave contains `Elements` to construct custom standardized figures from custom data-sources. These figures can contain limits (horizontal lines) and events (vertical lines)
+WaveDave contains `Elements` to construct custom standardized figures from custom data-sources. 
 
+The flow is as follows:
 
+- create data-sources by loading forecasts, measurements, etc
+- create `LineSource`s from the data-sources
+- create `Graphs` from on or more `LineSources`
+- create `Figures` from one of more `Graphs`
 
-A `Figure` contains one or more `Graphs` (subplots). Optionally it contains `limits` and `events`. 
+![image-20240315142750637](./image-20240315142750637.png)
 
 Figure has some settings to adjust to overall appearance:
 
@@ -133,25 +138,37 @@ Figure has some settings to adjust to overall appearance:
 - The overall figure size may be specified. 
 - Legends can be included below the lowest subplot.
 
+![image-20240315142824853](./image-20240315142824853.png)
+
+![image-20240315142849316](./image-20240315142849316.png)
+
+![image-20240315142907011](./image-20240315142907011.png)
+
+
+
+Limits can be added per Graph. Events can be added per Figure:
+
+![image-20240315143417053](./image-20240315143417053.png)
+
+## Figure
+
+A `Figure` contains one or more `Graphs` (subplots). Optionally it contains `limits` and `events`. 
+
+Legends are by default based on the .label properties of the LineSources. If all labels are the same then these are replaced by the datasource_description property of the LineSources.
+
+## Graph
+
 Every `Graph` contains one or mode `LineSources`.  If units or statistics-types are specified on the line-sources then these shall be identical for all lines sources.
+
+Graph title default to the name of the datasource
+
+## LineSource
 
 A `LineSource` can be created from Spectra, Responses, IntegratedForecasts, Measurements, or manually. A linesource can have plot-options specified and may have a directions which will then be plotted as quivers.
 
 
 
-## Legends
-
-Legends are by default based on the .label properties of the LineSources. If all labels are the same then these are replaced by the datasource_description property of the LineSources.
-
-
-
-## Title
-
-Graph title default to the name of the datasource
-
-
-
-## Getting LineSources
+### Getting LineSources
 
 `LineSources` can be obtained from
 
@@ -159,11 +176,11 @@ Graph title default to the name of the datasource
   - using the column names
   - the filename is added as datasource_description
 - Spectra
-  - 
+  - give_source
 
 
 
-# Making pages
+# PDF Reports
 
 A page looks as follows:
 
