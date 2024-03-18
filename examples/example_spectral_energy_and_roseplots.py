@@ -35,7 +35,7 @@ for t, title in times_of_interest:
     nearest_i = forecast.spectrum_number_nearest_to(local_time=t)
 
     # plot a vertical line at that time
-    x = forecast.time_in_timezone[nearest_i]
+    x = forecast.time_in_timezone()[nearest_i]
 
     ax.axvline(x, color = 'black', linestyle = '--', linewidth = 0.8)
 

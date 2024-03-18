@@ -1,7 +1,15 @@
-# WaveDave
+# WaveDave 🏄🏽‍♀️
 Practical marine waves and wave response calculations and comparisons.
 
 The name WaveDave is a shameless reference to [DAVE](https://usedave.nl) from the same author.
+
+====================================================================
+
+# This project is under development
+
+API may change without notice
+
+====================================================================
 
 
 
@@ -62,7 +70,13 @@ For **RAOs** the directions are coming from using a mathematical direction:
 
 Internally all data is treated as UTC.
 
-When plotting or reporting, the time is shifted with the amount of hours specified in `report_timezone_UTC_plus`.
+When reading data  from an external source that is not in UTC then first of all try to convince the supplier to deliver the data in UTC. If that doesn't work try harder. If that still doesn't work then switch to a different supplier. If all this fails then supply the conversion to utc to the method that creates the datasource.
+
+The timezone is only applied at the end of the pipeline when the date is converted to something immutable such as a table or a graph. At that time the time-zone is applied by shifting with the amount of hours specified in `report_timezone_UTC_plus` which can be defined at `Settings` level (global) or per   graph.
+
+### Exception
+
+`Events` are defined in the local timezone.
 
 ## Date formats
 
@@ -84,9 +98,14 @@ This is done using so called "formatter strings". For a full list see [cheatshee
 
 # Project wide settings
 
-Some settings such as the time-zone and colors are likely to be applicable for a whole project. To avoid having to explicitly define them over and over again, the `Settings` module allows setting of the  default values for these settings.
+Some settings such as the time-zone and colors are likely to be applicable for a whole project. To avoid having to explicitly define them over and over again, the `Settings` module allows setting of the  default values for these settings. Use as follows:
 
+```python
+import wavedave.settings as Settings
 
+Settings.LOCAL_TIMEZONE = 1 # report in UTC+1
+Settings.COLOR_MAIN = (40,159,168)  # define a different main color (R,G,B)
+```
 
 
 
@@ -107,7 +126,7 @@ Some settings such as the time-zone and colors are likely to be applicable for a
 
 # Spectra
 
-
+`Spectra` is a thin layer wrapping a series of `DirectionalSpectrum` objects and adding a time vector.
 
 ## Creation
 
@@ -176,7 +195,7 @@ apply_default_style
 
 WaveDave can be used to generate PDF reports.
 
-PDF reports can be defined flexibly using report elements:
+PDF reports can be defined flexibly using report elements. This following is an example of a pdf without any real data:
 
 ```python
     d = WaveDavePDF()
@@ -196,12 +215,23 @@ PDF reports can be defined flexibly using report elements:
     # this enables some additional options such as margins
     # and is also use for adding elements for which no convenience method exists
     # such as graphs or standard report sections
-    text_element = Text("<p>This text is added by first defining a Text object and then adding it to the report."
-                        "<br>Note that some basic HTML tags are supported, like <b>bold</b> and <i>italic</i>."
+    text_element = Text("<p>This text is added by first defining a Text object"
+                        " and then adding it to the report."
+                        "<br>Note that some basic HTML tags are supported,"
+                        " like <b>bold</b> and <i>italic</i>."
                         "<br>Also, line breaks are supported.<br>Like this."
                         "<br>And this.</p>"
-                        "The `margin` argument is used to increase the margin", margin=20)
+                        "<a href='https://youtu.be/CTDov_uGLss'>This is a link</a><br>"
+                        "The `margin` argument is used to increase the margin"
+                        , margin=20)
     d.add(text_element)
+
+    # We can also use the HTML to add images from the internet
+    d.add(Text("<p>Images from the internet can also be added using HTML:</p>"))
+    d.add(Text("<img src = 'https://usedave.nl/_images/welcome_image.jpg' width=400>"))
+        
+    # but local is also an option
+    d.add(Image("logo.png"))
 
     d.open()
 ```

@@ -4,7 +4,9 @@ from pathlib import Path
 
 import numpy as np
 
+from wavedave.helpers import human_time
 from wavedave.plots.wavespectrum import plot_wavespectrum
+import wavedave.settings as Settings
 from waveresponse import DirectionalSpectrum, WaveSpectrum
 
 from wavedave.to_smooth.convert import to_WaveSpectrum
@@ -34,10 +36,6 @@ class Spectra:
         ] = []  # series of DirectionalSpectrum objects
         self.time: list[datetime] = []  # timestamps in datetime format (UTC)
 
-        """Set the timezone for plots and reports"""
-        self.report_timezone_UTC_plus: float = 0
-        self.report_timezone_name = "UTC"
-
         # Define the data
         if wavespectra is not None:
             self._create_from_wavespectra(wavespectra)
@@ -64,22 +62,21 @@ class Spectra:
 
     # Time management
 
-    @property
-    def time_in_timezone(self):
+    def time_in_timezone(self, timezone_utc_plus=None):
         """Returns the time in the report timezone"""
         # apply timezone by subtracting the offset in hours to the time
-        return [t - timedelta(hours=self.report_timezone_UTC_plus) for t in self.time]
+        if timezone_utc_plus is None:
+            timezone_utc_plus = Settings.LOCAL_TIMEZONE
 
-    def human_time(self, time: datetime):
-        """Returns the time in human-readable format"""
-        # apply timezone by adding the offset in hours to the time
-        time = time + timedelta(hours=self.report_timezone_UTC_plus)
+        return [t - timedelta(hours=timezone_utc_plus) for t in self.time]
 
-        return time.strftime("%Y-%m-%d %H:%M")
-
-    def spectrum_number_nearest_to(self, local_time: datetime):
+    def spectrum_number_nearest_to(self, local_time: datetime, timezone_utc_plus=None):
         """Returns the number with time nearest to the given local time"""
-        utc_time = local_time + timedelta(hours=self.report_timezone_UTC_plus)
+
+        if timezone_utc_plus is None:
+            timezone_utc_plus = Settings.LOCAL_TIMEZONE
+
+        utc_time = local_time + timedelta(hours=timezone_utc_plus)
 
         # find the nearest time (convert to seconds to use abs and argmin)
         time_diff = [abs((t - utc_time).total_seconds()) for t in self.time]
@@ -118,7 +115,9 @@ class Spectra:
     def dirp(self):
         """Peak direction [degrees]"""
 
-        assert self._holds_wavespectra, "Peak direction is not defined for non-WaveSpectrum objects"
+        assert (
+            self._holds_wavespectra
+        ), "Peak direction is not defined for non-WaveSpectrum objects"
         # noinspection PyUnresolvedReferences
         return [ds.dirp(degrees=True) for ds in self.spectra]
 
@@ -126,7 +125,9 @@ class Spectra:
     def dirm(self):
         """Mean direction [degrees]"""
 
-        assert self._holds_wavespectra, "Mean direction is not defined for non-WaveSpectrum objects"
+        assert (
+            self._holds_wavespectra
+        ), "Mean direction is not defined for non-WaveSpectrum objects"
         # noinspection PyUnresolvedReferences
         return [ds.dirm(degrees=True) for ds in self.spectra]
 
@@ -272,7 +273,9 @@ class Spectra:
         try:
             data = read_octopus(str(filename))
         except Exception as e:
-            raise ValueError(f"Could not read file {filename} which is expected to be in the 'octopus' format containing 2D spectra.\nGot the following error: {e}")
+            raise ValueError(
+                f"Could not read file {filename} which is expected to be in the 'octopus' format containing 2D spectra.\nGot the following error: {e}"
+            )
 
         return Spectra(wavespectra=data, metadata={"filename": filename})
 
@@ -295,35 +298,48 @@ class Spectra:
 
     # Getting LineSources
 
-    def give_source(self, y_prop, dir_prop = None, unit = None):
+    def give_source(self, y_prop, dir_prop=None, unit=None):
         """Returns a LineSource object"""
         from wavedave.plots.elements import LineSource
 
         y = getattr(self, y_prop)
 
         if dir_prop is not None:
-            dir = getattr(self, dir_prop)
+            direction = getattr(self, dir_prop)
         else:
-            dir = None
+            direction = None
 
-        return LineSource(label = y_prop,
-                          x = self.time_in_timezone,
-                          y = y,
-                          dir = dir,
-                          datasource_description=self.description_source(),
-                          unit = unit)
+        return LineSource(
+            label=y_prop,
+            x=self.time_in_timezone(),
+            y=y,
+            direction=direction,
+            datasource_description=self.description_source(),
+            unit=unit,
+        )
 
     def give_Hs_LineSource(self):
-        return self.give_source("Hs", dir_prop="dirp", unit = "m")
+        return self.give_source("Hs", dir_prop="dirp", unit="m")
 
     def give_Tp_LineSource(self):
-        return self.give_source("Tp", unit = "s")
+        return self.give_source("Tp", unit="s")
 
     # Plotting =====================================================================
 
     def plot_spectrum_frequencies_over_time(
-        self, ax=None, cmap="Blues", seconds=True, levels=None
+        self,
+        ax=None,
+        cmap="Blues",
+        seconds=True,
+        levels=None,
+        local_timezone_utc_plus=None,
     ):
+        local_timezone_utc_plus = (
+            Settings.LOCAL_TIMEZONE
+            if local_timezone_utc_plus is None
+            else local_timezone_utc_plus
+        )
+
         """Plots the frequency data over time"""
         import matplotlib.pyplot as plt
 
@@ -344,15 +360,28 @@ class Spectra:
         if levels is None:
             levels = np.linspace(data.min(), data.max(), 20)
         ax.contourf(
-            self.time_in_timezone, y_data, data.transpose(), cmap=cmap, levels=levels
+            self.time_in_timezone(local_timezone_utc_plus),
+            y_data,
+            data.transpose(),
+            cmap=cmap,
+            levels=levels,
         )
         ax.set_xlabel("Time")
         ax.set_ylabel(y_label)
 
         return fig, ax
 
-    def plot_direction_over_time(self, ax=None, cmap="Greys"):
+    def plot_direction_over_time(
+        self, ax=None, cmap="Greys", local_timezone_utc_plus=None
+    ):
         """Plots the frequency data over time"""
+
+        local_timezone_utc_plus = (
+            Settings.LOCAL_TIMEZONE
+            if local_timezone_utc_plus is None
+            else local_timezone_utc_plus
+        )
+
         import matplotlib.pyplot as plt
 
         if ax is None:
@@ -363,7 +392,7 @@ class Spectra:
         # plot the data
         levels = np.linspace(data.min(), data.max(), 20)
         ax.contourf(
-            self.time_in_timezone,
+            self.time_in_timezone(local_timezone_utc_plus),
             self.dirs,
             data.transpose(),
             cmap=cmap,
@@ -373,10 +402,24 @@ class Spectra:
         ax.set_xlabel("Time")
         ax.set_ylabel("Direction")
 
-    def plot_spectrum_2d(self, ispec=0, cmap="Purples", title="", ax=None, levels=None):
+    def plot_spectrum_2d(
+        self,
+        ispec=0,
+        cmap="Purples",
+        title="",
+        ax=None,
+        levels=None,
+        local_timezone_utc_plus=None,
+    ):
         """Plots the spectrum at a given time index"""
 
-        above_title = f"{title}{self.human_time(self.time[ispec])}\n"
+        local_timezone_utc_plus = (
+            Settings.LOCAL_TIMEZONE
+            if local_timezone_utc_plus is None
+            else local_timezone_utc_plus
+        )
+
+        above_title = f"{title}{human_time(self.time[ispec], timezone_utc_plus=local_timezone_utc_plus)}\n"
         return plot_wavespectrum(
             self.spectra[ispec],
             cmap=cmap,
@@ -396,6 +439,7 @@ class Spectra:
         do_quiver=True,
         quiver_color="k",
         quiver_spacing=1,
+        local_timezone_utc_plus=None,
     ):
         """Plots the significant wave height in bands of periods [s]
 
@@ -427,9 +471,20 @@ class Spectra:
 
         spectra = [self] + bands
 
+        local_timezone_utc_plus = (
+            Settings.LOCAL_TIMEZONE
+            if local_timezone_utc_plus is None
+            else local_timezone_utc_plus
+        )
+
         for ax, spec in zip(axes, spectra):
             # plot the total wave height at the top
-            ax.plot(spec.time_in_timezone, spec.Hs, label=label, **plot_args)
+            ax.plot(
+                spec.time_in_timezone(local_timezone_utc_plus),
+                spec.Hs,
+                label=label,
+                **plot_args,
+            )
 
             if do_quiver:
                 # add quiver
@@ -447,7 +502,7 @@ class Spectra:
                 q_scale = 40
 
                 for i in range(0, len(spec.time), quiver_spacing):
-                    qx.append(spec.time_in_timezone[i])
+                    qx.append(spec.time_in_timezone(local_timezone_utc_plus)[i])
                     qy.append(spec.Hs[i])
                     qu.append(-np.sin(np.radians(directions_deg[i])))
                     qv.append(-np.cos(np.radians(directions_deg[i])))

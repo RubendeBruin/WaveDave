@@ -14,17 +14,13 @@ class IntegratedForecast:
 
         filename:
         dateformat: data-format used in the file
-        forecast_in_utc_plus: offset to apply on the time-stamps to get to UTC. If the forecast is supplied in UTC+7 then use 7.
+        forecast_in_utc_plus [0]: offset to apply on the time-stamps to get to UTC. If the forecast is supplied in UTC+7 then use 7.
 
         """
         filename = Path(filename)
         assert filename.exists(), f"File {filename} does not exist"
         info = []
         data = []
-
-        self.local_timezone = local_timezone
-        if self.local_timezone is None:
-            self.local_timezone = settings.LOCAL_TIMEZONE
 
         # load the file
         with open(filename, "r") as f:
@@ -86,6 +82,11 @@ class IntegratedForecast:
 
         self.columns = [*self.data.keys()]
 
+        # apply timezone offset if any
+        if forecast_in_utc_plus:
+            for i in range(len(self.time)):
+                self.time[i] = self.time[i] + timedelta(hours=forecast_in_utc_plus)
+
     def print(self):
         print("Columns in the integrated forecast:")
         print("\n".join(self.columns))
@@ -117,18 +118,17 @@ class IntegratedForecast:
             self._chk_column(dir)
             dir = self.data[dir]
 
-        times = [t - timedelta(hours=self.local_timezone) for t in self.time]
 
         # unit is the part of the column name in brackets
         unit = col.split("[")[-1][:-1]
         label = col.split("[")[0]
 
         return LineSource(
-            x=times,
+            x=self.time.copy(),
             y=self.data[col],
             label=label,
             unit=unit,
-            dir=dir,
+            direction=dir,
             datasource_description=self.source,
         )
 

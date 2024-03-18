@@ -45,8 +45,6 @@ def plot_wavespectrum(ds : DirectionalSpectrum, cmap = 'RdPu', above_title = '',
     if levels is None:
         levels = np.linspace(0, np.nanmax(vals), 20)
 
-    print(f'levels = {levels[-1]}')
-    print(f'max(vals) = {np.nanmax(vals)}')
     ax.contourf(theta, r, vals.transpose(), cmap=cmap, levels=levels)
 
     ax.set_title(f'{above_title}Hs = {ds.hs:.2f}m '

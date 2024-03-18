@@ -176,7 +176,10 @@ class EnergySection(StandardSection):
         self.n_cols = 3
         self.spectra = spectra
 
-    def render_figure(self, report):
+    def render_figure(self, report, timezone=None):
+
+        if timezone is None:
+            timezone = Settings.LOCAL_TIMEZONE
 
 
         # first make a figure with the size that we like
@@ -198,7 +201,7 @@ class EnergySection(StandardSection):
         top_axis = fig.add_subplot(gs[0, :])
 
         # plot the spectral energy map
-        self.spectra.plot_spectrum_frequencies_over_time(cmap=self.cmap, ax=top_axis)
+        self.spectra.plot_spectrum_frequencies_over_time(cmap=self.cmap, ax=top_axis, local_timezone_utc_plus=timezone)
         rose_axes = ax.flatten()[n_cols:]
 
         # plot roses at the the events
@@ -210,10 +213,9 @@ class EnergySection(StandardSection):
         i_nearests = []
         max_rose = 0
         for i, event in enumerate(self.events):
-            x = event.when
-            nearest_i = self.spectra.spectrum_number_nearest_to(local_time=x)
+            nearest_i = self.spectra.spectrum_number_nearest_to(local_time=event.when, timezone_utc_plus=timezone)
 
-            x = self.spectra.time_in_timezone[nearest_i]
+            x = self.spectra.time_in_timezone(timezone_utc_plus=timezone)[nearest_i]
 
             top_axis.axvline(x, color="black", linestyle="--", linewidth=0.8)
 

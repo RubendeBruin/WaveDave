@@ -72,7 +72,7 @@ class Limit:
     value: float
 
     def __post_init__(self):
-        assert isinstance(self.value, float), "value must be a number, for example 1.5"
+        assert isinstance(self.value, (float,int)), f"value must be a number, for example 1.5, got {self.value}"
         assert isinstance(self.description, str), "description must be a string"
 
     def render(self, ax):
@@ -107,7 +107,7 @@ class LineSource:
 
     statistics_type: StatisticsType = StatisticsType.NONE
 
-    dir: list[
+    direction: list[
         float
     ] or None = None  # dir is going to with 0 = up, 90 = right, 180 = down, 270 = left
 
@@ -171,7 +171,7 @@ class LineSource:
 
         ax.plot(self.x, self.y, label=self.label, **self.plotspec)
 
-        if self.dir:
+        if self.direction:
             self._render_quiver(ax)
 
     def _render_quiver(self, ax):
@@ -184,8 +184,8 @@ class LineSource:
         for i in range(0, len(self.x), self.dir_plot_spacing):
             qx.append(self.x[i])
             qy.append(self.y[i])
-            qu.append(-np.sin(np.radians(self.dir[i])))
-            qv.append(-np.cos(np.radians(self.dir[i])))
+            qu.append(-np.sin(np.radians(self.direction[i])))
+            qv.append(-np.cos(np.radians(self.direction[i])))
 
         ax.quiver(
             qx,
@@ -386,6 +386,9 @@ if __name__ == "__main__":
     ]
 
     limit_Hs = Limit("Max for personel transfer", 1.5)
+
+    import wavedave.settings as Settings
+    Settings.DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 
     graph = Graph(title="Wave height", source=[line1, line2])
 

@@ -1,6 +1,7 @@
 import numpy as np
+import matplotlib.dates as mdates
 
-from wavedave.settings import DATE_FORMATTER
+from wavedave.settings import DATE_FORMAT
 
 
 def sync_yscales(axes):
@@ -21,6 +22,8 @@ def sync_yscales(axes):
 def apply_default_style(fig, axes):
     if not isinstance(axes, (tuple, list, np.ndarray)):
         axes = [axes]
+
+    DATE_FORMATTER = mdates.DateFormatter(DATE_FORMAT)
 
     # set font
     for ax in axes:

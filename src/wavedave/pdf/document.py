@@ -180,11 +180,21 @@ if __name__ == '__main__':
     # this enables some additional options such as margins
     # and is also use for adding elements for which no convenience method exists
     # such as graphs or standard report sections
-    text_element = Text("<p>This text is added by first defining a Text object and then adding it to the report."
-                        "<br>Note that some basic HTML tags are supported, like <b>bold</b> and <i>italic</i>."
+    text_element = Text("<p>This text is added by first defining a Text object"
+                        " and then adding it to the report."
+                        "<br>Note that some basic HTML tags are supported,"
+                        " like <b>bold</b> and <i>italic</i>."
                         "<br>Also, line breaks are supported.<br>Like this."
                         "<br>And this.</p>"
-                        "The `margin` argument is used to increase the margin", margin=20)
+                        "<a href='https://youtu.be/CTDov_uGLss'>This is a link</a><br>"
+                        "The `margin` argument is used to increase the margin"
+                        , margin=20)
     d.add(text_element)
+
+    d.add(Text("<p>Images from the internet can also be added using HTML:</p>"))
+    d.add(Text("<img src = 'https://usedave.nl/_images/welcome_image.jpg' width=400>"))
+
+    # but local is also an option
+    d.add(Image("logo.png"))
 
     d.open()
