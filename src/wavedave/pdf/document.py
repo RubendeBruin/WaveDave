@@ -8,6 +8,10 @@ from fpdf.fonts import FontFace
 
 LOGO = Path(__file__).parent / "logo.png"
 
+import os
+import winreg
+
+
 class ToPDFMixin:
 
     @abstractmethod
@@ -16,7 +20,7 @@ class ToPDFMixin:
 
 class Text(ToPDFMixin):
 
-    def __init__(self, text, margin=17):
+    def __init__(self, text, margin=9):
         self.text = text
         self.margin = margin
 
@@ -26,15 +30,24 @@ class Text(ToPDFMixin):
 
 class Header(ToPDFMixin):
 
-        def __init__(self, text):
+        def __init__(self, text, margin=9):
             self.text = text
-            self.margin = 17
+            self.margin = margin
 
         def generate_pdf(self, report):
             report.set_x(report.l_margin + self.margin)
             with report.use_font_face(FontFace(size_pt=12, color=(0, 0, 0), emphasis="B")):
                 report.write_html(self.text)
                 report.ln()
+
+class Image(ToPDFMixin):
+
+        def __init__(self, filename):
+            self.filename = filename
+
+        def generate_pdf(self, report):
+            report.set_x(report.l_margin)
+            report.image(self.filename, w=report.epw )
 
 class PageBreakIfNeeded(ToPDFMixin):
 
@@ -57,10 +70,14 @@ class WaveDavePDF(fpdf.FPDF):
         self.project = "Project"
         self.author = "Author"
 
-        # set to A4
-        self.add_font("arial", "", "c:\\windows\\fonts\\arial.ttf")
+        # if on windows, add arial font
+        if False and os.name == "nt":
+            self.add_font("arial", "", fname = "c:/windows/fonts/arial.ttf")
+            self.add_font("arial", "I", fname = "c:/windows/fonts/ariali.ttf")
+            self.add_font("arial", "B", fname = "c:/windows/fonts/arialbd.ttf")
+
+        # set to A4 and add arial font (note: only works on windows, on other systems it will default another font)
         self.set_font("arial", "", 10)
-        self.add_page(format="a4")
 
         self._produced = False
 
@@ -124,6 +141,8 @@ class WaveDavePDF(fpdf.FPDF):
 
     def produce(self):
 
+        self.add_page(format="a4")
+
         for section in self.sections:
             section.generate_pdf(self)
 
@@ -139,3 +158,33 @@ class WaveDavePDF(fpdf.FPDF):
 
     def add_page_break(self):
         self.add(PageBreakIfNeeded(0.0))
+
+    def add_image(self, filename):
+        self.add(Image(filename))
+
+if __name__ == '__main__':
+    d = WaveDavePDF()
+
+    # define the report metadata
+    d.author = "Ping-pong tafel"
+    d.title = "Simple report"
+    d.project = "WaveDave example project"
+    d.date = "2024-03-11"
+
+    # add some elements using the convenience methods
+    d.add_header("Hello")
+    d.add_text("This is a very simple report")
+    d.add_text("Add more content by defining Graphs and adding them to the report")
+
+    # or, using the add method
+    # this enables some additional options such as margins
+    # and is also use for adding elements for which no convenience method exists
+    # such as graphs or standard report sections
+    text_element = Text("<p>This text is added by first defining a Text object and then adding it to the report."
+                        "<br>Note that some basic HTML tags are supported, like <b>bold</b> and <i>italic</i>."
+                        "<br>Also, line breaks are supported.<br>Like this."
+                        "<br>And this.</p>"
+                        "The `margin` argument is used to increase the margin", margin=20)
+    d.add(text_element)
+
+    d.open()

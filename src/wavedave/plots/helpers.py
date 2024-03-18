@@ -1,5 +1,7 @@
 import numpy as np
 
+from wavedave.settings import DATE_FORMATTER
+
 
 def sync_yscales(axes):
     """Synchronizes the y-axis of a list of axes"""
@@ -15,32 +17,35 @@ def sync_yscales(axes):
 
     return axes
 
-def apply_default_style(fig, axes):
 
+def apply_default_style(fig, axes):
     if not isinstance(axes, (tuple, list, np.ndarray)):
         axes = [axes]
 
     # set font
     for ax in axes:
-        for item in ([ax.title, ax.xaxis.label, ax.yaxis.label] +
-            ax.get_xticklabels() + ax.get_yticklabels()):
+        for item in (
+            [ax.title, ax.xaxis.label, ax.yaxis.label]
+            + ax.get_xticklabels()
+            + ax.get_yticklabels()
+        ):
             item.set_fontsize(10)
-            item.set_fontname('Arial')
+            item.set_fontname("Arial")
+
+        ax.xaxis.set_major_formatter(DATE_FORMATTER)
 
     for ax in axes:
-        ax.set_facecolor('white')
+        ax.set_facecolor("white")
 
         # dashed grid
-        ax.grid(linestyle='--', linewidth = 0.5)
-
+        ax.grid(linestyle="--", linewidth=0.5)
 
     return fig
 
-def faded_line_color(factor : float, color = (40/255, 40/255, 92/255)):
+
+def faded_line_color(factor: float, color=(40 / 255, 40 / 255, 92 / 255)):
     """Return default color faded with factor. 0 = fully present, 1 = fully faded"""
 
     deltas = [1 - c for c in color]
 
     return [a + b * factor for a, b in zip(color, deltas)]
-
-

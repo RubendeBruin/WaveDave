@@ -8,13 +8,13 @@ import wavedave.settings as settings
 
 class IntegratedForecast:
     def __init__(
-        self, filename: str or Path, dateformat="%d-%b-%Y %H:%M", local_timezone=None
+        self, filename: str or Path, dateformat="%d-%b-%Y %H:%M", forecast_in_utc_plus=0
     ):
         """Reads the integrated forecast from a .csv file
 
         filename:
         dateformat: data-format used in the file
-        local_timezone: offset to apply on the time-stamps to get to local timezone. If None, the default timezone is used
+        forecast_in_utc_plus: offset to apply on the time-stamps to get to UTC. If the forecast is supplied in UTC+7 then use 7.
 
         """
         filename = Path(filename)
@@ -134,19 +134,26 @@ class IntegratedForecast:
 
 
 if __name__ == "__main__":
+
+    dir = Path(__file__).parent.parent.parent.parent
+
     f = IntegratedForecast(
-        r"A:\Waves\packages\WaveDave\examples\datafiles\marine_forecast_report_48127014-240311-110049_20240311.csv"
+        dir / "examples" / "datafiles" / "marine_forecast_report_20240311.csv"
     )
 
     import matplotlib.pyplot as plt
 
     plotspec = dict()
-    plotspec["marker"] = "o"
-    plotspec["color"] = "red"
+    plotspec["marker"] = "o"  # ('.', 'o', 'v', '^', '<', '>', '8', 's', 'p', '*', 'h', 'H', 'D', 'd', 'P', 'X')
     plotspec["linestyle"] = "none"
-    plotspec["markersize"] = 3
-    plotspec["markerfacecolor"] = "red"
-    plotspec["markeredgecolor"] = "black"
+    plotspec["markersize"] = 5
+    plotspec["markerfacecolor"] = "pink"
+    plotspec["markeredgecolor"] = "purple"
 
+    fig, axes = plt.subplots(1, 1, figsize=(10, 5))
     plt.plot(f.time, f.data[f.columns[0]], **plotspec)
+
+    from wavedave.plots.helpers import apply_default_style
+    apply_default_style(fig, axes)
+
     plt.show()

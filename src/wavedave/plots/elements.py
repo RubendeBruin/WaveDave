@@ -39,6 +39,10 @@ class Event:
     description: str
     when: datetime
 
+    def __post_init__(self):
+        assert isinstance(self.when, datetime), "when must be a datetime object, for example datetime(2024, 7, 26,12,0,0)"
+        assert isinstance(self.description, str), "description must be a string"
+
     def render(self, ax, text=True):
         x = self.when
         ax.axvline(x=self.when, color="k", linestyle="--", linewidth=1)
@@ -66,6 +70,10 @@ class Event:
 class Limit:
     description: str
     value: float
+
+    def __post_init__(self):
+        assert isinstance(self.value, float), "value must be a number, for example 1.5"
+        assert isinstance(self.description, str), "description must be a string"
 
     def render(self, ax):
         ax.axhline(self.value, color="k", linestyle="--", linewidth=1)
@@ -117,6 +125,18 @@ class LineSource:
             import wavedave.settings as Settings
 
             self.color = Settings.COLOR_MAIN
+
+        assert len(self.x) == len(self.y), "x and y must have the same length"
+        assert isinstance(self.x[0], datetime), "x must be a list of datetime objects"
+        assert isinstance(self.y[0], (int, float)), "y must be a list of numbers"
+        assert isinstance(self.label, str), "label must be a string"
+        assert isinstance(self.unit, str), "unit must be a string"
+        assert isinstance(self.statistics_type, StatisticsType), "statistics_type must be a StatisticsType"
+        assert isinstance(self.dir_plot_spacing, int), "dir_plot_spacing must be an integer"
+        assert isinstance(self.color, (tuple, str)), "color must be a tuple or a string"
+        assert isinstance(self.marker, (str, type(None))), "marker must be a string or None"
+        assert isinstance(self.plotspec, (dict, type(None))), "plotspec must be a dictionary or None"
+
 
     @property
     def label_full_context(self):
@@ -201,6 +221,13 @@ class Graph:
         if isinstance(self.source, LineSource):
             self.source = [self.source]
 
+        assert isinstance(self.source, (list, tuple)), "source must be a list of LineSource objects"
+        assert isinstance(self.source[0], LineSource), f"source must be a list of LineSource objects, got: {type(self.source[0])}"
+        assert isinstance(self.title, (str, type(None))), "title must be a string or None"
+        assert isinstance(self.ymin, (float, type(None))), "ymin must be a float or None"
+        assert isinstance(self.ymax, (float, type(None))), "ymax must be a float or None"
+        assert isinstance(self.limit, (Limit, type(None))), f"limit must be a Limit object or None, got {type(self.limit)}"
+
         # check that all sources have the same statistics type
         st = self.source[0].statistics_type
         for s in self.source[1:]:
@@ -247,6 +274,18 @@ class Figure(ToPDFMixin):
 
         if self.legend_force_full_context:
             self.legend = True
+
+        assert isinstance(self.graphs, (list, tuple)), "graphs must be a list of Graph objects"
+        assert isinstance(self.graphs[0], Graph), f"graphs must be a list of Graph objects, got: {type(self.graphs[0])}"
+        assert isinstance(self.events, (list, type(None))), "events must be a list of Event objects or None"
+        if self.events:
+            assert isinstance(self.events[0], Event), f"events must be a list of Event objects, got: {type(self.events[0])}"
+        assert isinstance(self.share_x, SharedX), "share_x must be a SharedX object"
+        assert isinstance(self.share_y, bool), "share_y must be a boolean"
+        assert isinstance(self.legend, bool), "legend must be a boolean"
+        assert isinstance(self.legend_force_full_context, bool), "legend_force_full_context must be a boolean"
+        assert isinstance(self.figsize, (tuple, list)), "figsize must be a tuple or list"
+
 
     def render(self):
         n = len(self.graphs)

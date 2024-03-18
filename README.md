@@ -10,17 +10,15 @@ The name WaveDave is a shameless reference to [DAVE](https://usedave.nl) from th
 WaveDave is a Python package for practical marine waves and wave response calculations.
 
 It heavily relies on, and combines the functionality of the following packages:
-- [wavespectra](https://wavespectra.readthedocs.io/en/latest/)
-- [waveresponse](https://docs.4insight.io/waveresponse/python/latest/index.html)
-pdf generation is included using:
-- [fpdf2](https://github.com/py-pdf/fpdf2)
-
+- [wavespectra](https://wavespectra.readthedocs.io/en/latest/) for reading wave-spectra from real-life sources such as model forecasts or buoys
+- [waveresponse](https://docs.4insight.io/waveresponse/python/latest/index.html) for calculating spectral properties and responses.
+- [fpdf2](https://github.com/py-pdf/fpdf2) for generating PDFs
 
 WaveSpectra is used for importing wave-spectra from real-life sources such as forecasts, models or measurements buoys.
 WaveResponse is used for plotting and combining the wave-spectra with RAOs.
 
 This package adds:
-- a comprehensable API for creating wave-spectra from external sources (completely wrapping all required wavespectra calls)
+- a comprehensible API for creating wave-spectra from external sources (completely wrapping all required wavespectra calls)
 - conversion of binned wave-spectra to smooth spectra
 - a Spectra object that contains a series of wave-response wave-spectra and corresponding time-stamps.
 
@@ -34,27 +32,84 @@ forecast = Spectra.from_octopus('forecastfile.csv')
 plt.plot(forecast.time, forecast.Hs, label = "Forecast")
 ```
 
+- a few traditional plots as standard report sections (binned source comparison, energy evolution)
+- a object-oriented system for creating and reporting custom graphs.
+- a pdf report template with header, footer, page numbers and a logo.
+
 # Conventions
 
 times are datetime objects
 time is in UTC
 frequency is in Hz
 Direction is in degrees using coming-from convention
-For wave-spectra the directions are compass directions (0=N, 90=E, 180=S, 270=W)
+For **wave**-spectra the directions are compass directions
+
+- 0 = coming from North, 
+- 90= coming from East, 
+- 180= coming from South, 
+- 270= coming from West
+
+For **RAOs** the directions are coming from using a mathematical direction: 
+
+- 0 = progressing along x-axis ("from bow") , 
+- 90 = progressing along negative y ("from ps)", 
+- 180 = progressing against x ("from stern")
+- 270 = progressing along y ("from sb")
 
 
 
 ## Timezone
 
-Internally all data is treated as UTC
+Internally all data is treated as UTC.
 
 When plotting or reporting, the time is shifted with the amount of hours specified in `report_timezone_UTC_plus`.
 
+## Date formats
+
+Converting dates can be a real 😠.  Especially when forecasts are delivered in a text format with a different language setting than the computer that WaveDave is run on. WaveDave does not control your computer or your forecast. Sometimes opening the file in excel and saving it again will also change the date format. This can use used to your benefit or frustration, use with care. 
+
+Whenever dates or times need to be converted from text to numbers WaveDave allows you to explicitly specify the date-format to be used. For example:
+
+```python
+yesterdays_forecast = IntegratedForecast(filename2, dateformat="%m/%d/%Y %H:%M")
+```
+
+tells WaveDave to expect a timestamp like "07/26/2024 12:00"
+
+A timestamp like `11-Mar-2024 13:00` can be formatted using `dateformat = "%d-%b-%Y %H:%M"`
+
+This is done using so called "formatter strings". For a full list see [cheatsheet](https://strftime.org/).
+
+
+
+# Project wide settings
+
+Some settings such as the time-zone and colors are likely to be applicable for a whole project. To avoid having to explicitly define them over and over again, the `Settings` module allows setting of the  default values for these settings.
 
 
 
 
-# Creation
+
+# Sources
+
+"Sources" objects containing data. Available sources are:
+
+| Source                                                       | Object               |
+| ------------------------------------------------------------ | -------------------- |
+| 2d spectra such as buoy measurement, forecasts or synthetic spectra. | `Spectra`            |
+| Integrated forecasts. These are time-series of Hs, Tp, wind, temperature etc. | `IntegratedForecast` |
+| RAO. Response Amplitude Operators                            | `RAO`                |
+| Measured time-series such as MRU data.                       | `Timeseries`         |
+| Calculated response spectra. These are 1D spectra created from either combining RAOs and waves OR performing a spectral analysis on a measure time series. | `ResponseSpectra`    |
+| A line in a graph, having a value and optionally a direction defined over time. Typically produced from other sources. | `LineSource`         |
+
+
+
+# Spectra
+
+
+
+## Creation
 
 Spectra.from_octopus
 Spectra.from_obscape
@@ -117,9 +172,41 @@ apply_default_style
 
 
 
+# Making reports
 
+WaveDave can be used to generate PDF reports.
 
-# Making figures
+PDF reports can be defined flexibly using report elements:
+
+```python
+    d = WaveDavePDF()
+
+    # define the report metadata
+    d.author = "Ping-pong tafel"
+    d.title = "Simple report"
+    d.project = "WaveDave example project"
+    d.date = "2024-03-11"
+
+    # add some elements using the convenience methods
+    d.add_header("Hello")
+    d.add_text("This is a very simple report")
+    d.add_text("Add more content by defining Graphs and adding them to the report")
+
+    # or, using the add method
+    # this enables some additional options such as margins
+    # and is also use for adding elements for which no convenience method exists
+    # such as graphs or standard report sections
+    text_element = Text("<p>This text is added by first defining a Text object and then adding it to the report."
+                        "<br>Note that some basic HTML tags are supported, like <b>bold</b> and <i>italic</i>."
+                        "<br>Also, line breaks are supported.<br>Like this."
+                        "<br>And this.</p>"
+                        "The `margin` argument is used to increase the margin", margin=20)
+    d.add(text_element)
+
+    d.open()
+```
+
+## Making figures
 
 WaveDave contains `Elements` to construct custom standardized figures from custom data-sources. 
 
@@ -129,6 +216,7 @@ The flow is as follows:
 - create `LineSource`s from the data-sources
 - create `Graphs` from on or more `LineSources`
 - create `Figures` from one of more `Graphs`
+- plot the figures directly to screen or add them to a report.
 
 ![image-20240315142750637](./image-20240315142750637.png)
 
@@ -180,13 +268,3 @@ A `LineSource` can be created from Spectra, Responses, IntegratedForecasts, Meas
 
 
 
-# PDF Reports
-
-A page looks as follows:
-
-- heading
-- text
-- figure (s)
-- text
-
-The figures are scaled to the page width. It is your own responsibility to make it fit on one or more pages nicely.
