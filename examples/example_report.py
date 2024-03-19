@@ -9,11 +9,9 @@ filename = dir / "datafiles" / "infoplaza.csv"
 
 
 forecast1 = Spectra.from_octopus(filename)
-forecast2 = Spectra.from_octopus(filename)
-forecast3 = Spectra.from_octopus(filename)
+forecast2 = Spectra.from_octopus(filename, source_in_utc_plus=6)
+forecast3 = Spectra.from_octopus(filename, source_in_utc_plus=12)
 
-forecast2.report_timezone_UTC_plus = 6
-forecast3.report_timezone_UTC_plus = 12
 
 # events
 breakfast = Event(description="Breakfast", when=datetime(2024, 3, 6, 0, 12, 0))
@@ -24,8 +22,7 @@ bedtime = Event(description="Bedtime", when=datetime(2024, 3, 10, 11, 0, 0))
 
 # load waverider files
 
-buoy = Spectra.from_octopus(filename)
-buoy.report_timezone_UTC_plus = 3
+buoy = Spectra.from_octopus(filename, source_in_utc_plus=3.5)
 
 # make a report
 

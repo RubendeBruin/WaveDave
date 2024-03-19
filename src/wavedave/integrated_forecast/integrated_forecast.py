@@ -82,10 +82,10 @@ class IntegratedForecast:
 
         self.columns = [*self.data.keys()]
 
-        # apply timezone offset if any
+        # apply timezone offset if any to convert to UTC
         if forecast_in_utc_plus:
             for i in range(len(self.time)):
-                self.time[i] = self.time[i] + timedelta(hours=forecast_in_utc_plus)
+                self.time[i] = self.time[i] - timedelta(hours=forecast_in_utc_plus)
 
     def print(self):
         print("Columns in the integrated forecast:")

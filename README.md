@@ -68,11 +68,21 @@ For **RAOs** the directions are coming from using a mathematical direction:
 
 ## Timezone
 
-Internally all data is treated as UTC.
+Internally all data is stored as UTC.
 
 When reading data  from an external source that is not in UTC then first of all try to convince the supplier to deliver the data in UTC. If that doesn't work try harder. If that still doesn't work then switch to a different supplier. If all this fails then supply the conversion to utc to the method that creates the datasource.
 
-The timezone is only applied at the end of the pipeline when the date is converted to something immutable such as a table or a graph. At that time the time-zone is applied by shifting with the amount of hours specified in `report_timezone_UTC_plus` which can be defined at `Settings` level (global) or per   graph.
+The timezone is only applied at the end of the pipeline when the date is converted to something immutable such as a table or a graph. At that time the time-zone is applied by shifting with the amount of hours specified in `LOCAL_TIMEZONE` which can be defined at `Settings` level (global) or per Report.
+
+Where to define the local timezone:
+
+| To apply          | Where                                                        |
+| ----------------- | ------------------------------------------------------------ |
+| Globally          | `import wavedave.settings as Settings`<br>`Settings.LOCAL_TIMEZONE` |
+| For a report only | `report = WaveDavePDF()`<br>`report.local_timezone = 7`      |
+| For a figure only | when rendering the figure: <br>`figure.render(local_timezone=7)` |
+
+
 
 ### Exception
 
@@ -274,6 +284,8 @@ A `Figure` contains one or more `Graphs` (subplots). Optionally it contains `lim
 
 Legends are by default based on the .label properties of the LineSources. If all labels are the same then these are replaced by the datasource_description property of the LineSources.
 
+When rendering a figure, a time-zone can be provided. 
+
 ## Graph
 
 Every `Graph` contains one or mode `LineSources`.  If units or statistics-types are specified on the line-sources then these shall be identical for all lines sources.
@@ -297,4 +309,8 @@ A `LineSource` can be created from Spectra, Responses, IntegratedForecasts, Meas
   - give_source
 
 
+
+# References
+
+Response calculation, rao interpolation, encounter frequencies, etc: https://cradpdf.drdc-rddc.gc.ca/PDFS/unc341/p811241_A1b.pdf
 

@@ -24,7 +24,7 @@ class Spectra:
 
     """
 
-    def __init__(self, wavespectra=None, metadata=None):
+    def __init__(self, wavespectra=None, metadata=None, source_in_utc_plus:float=0):
         """Creates a Spectra object
 
         optional input:
@@ -38,7 +38,7 @@ class Spectra:
 
         # Define the data
         if wavespectra is not None:
-            self._create_from_wavespectra(wavespectra)
+            self._create_from_wavespectra(wavespectra, source_in_utc_plus=source_in_utc_plus)
 
         if metadata is None:
             metadata = {}
@@ -68,7 +68,7 @@ class Spectra:
         if timezone_utc_plus is None:
             timezone_utc_plus = Settings.LOCAL_TIMEZONE
 
-        return [t - timedelta(hours=timezone_utc_plus) for t in self.time]
+        return [t + timedelta(hours=timezone_utc_plus) for t in self.time]
 
     def spectrum_number_nearest_to(self, local_time: datetime, timezone_utc_plus=None):
         """Returns the number with time nearest to the given local time"""
@@ -76,7 +76,7 @@ class Spectra:
         if timezone_utc_plus is None:
             timezone_utc_plus = Settings.LOCAL_TIMEZONE
 
-        utc_time = local_time + timedelta(hours=timezone_utc_plus)
+        utc_time = local_time - timedelta(hours=timezone_utc_plus)
 
         # find the nearest time (convert to seconds to use abs and argmin)
         time_diff = [abs((t - utc_time).total_seconds()) for t in self.time]
@@ -221,7 +221,7 @@ class Spectra:
 
     # Creation methods
 
-    def _create_from_wavespectra(self, wavespectra):
+    def _create_from_wavespectra(self, wavespectra, source_in_utc_plus:float=0):
         # Create the data
 
         in_dirs = wavespectra.dir.values
@@ -255,11 +255,14 @@ class Spectra:
             timestamp = (t - np.datetime64("1970-01-01T00:00:00")) / np.timedelta64(
                 1, "s"
             )
-            self.time.append(datetime.fromtimestamp(timestamp))
+
+            # and convert to UTC
+            self.time.append(datetime.fromtimestamp(timestamp) - timedelta(hours=source_in_utc_plus))
 
     @staticmethod
     def from_octopus(
         filename: Path or str,
+        source_in_utc_plus: float = 0,
     ):
         """Reads an octopus file and returns a Spectra object"""
 
@@ -277,13 +280,18 @@ class Spectra:
                 f"Could not read file {filename} which is expected to be in the 'octopus' format containing 2D spectra.\nGot the following error: {e}"
             )
 
-        return Spectra(wavespectra=data, metadata={"filename": filename})
+        return Spectra(
+            wavespectra=data,
+            metadata={"filename": filename},
+            source_in_utc_plus=source_in_utc_plus,
+        )
 
     @staticmethod
     def from_obscape(
         directory: Path or str,
         start_date: datetime or None = None,
         end_date: datetime or None = None,
+        source_in_utc_plus: float = 0,
     ):
         """Reads an obscape directory and returns a Spectra object"""
 
@@ -294,7 +302,7 @@ class Spectra:
         from wavespectra import read_obscape
 
         data = read_obscape(directory, start_date=start_date, end_date=end_date)
-        return Spectra(wavespectra=data)
+        return Spectra(wavespectra=data, metadata={"source": "OBScape buoy"}, source_in_utc_plus=source_in_utc_plus)
 
     # Getting LineSources
 

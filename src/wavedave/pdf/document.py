@@ -9,7 +9,7 @@ from fpdf.fonts import FontFace
 LOGO = Path(__file__).parent / "logo.png"
 
 import os
-import winreg
+import wavedave.settings as Settings
 
 
 class ToPDFMixin:
@@ -70,8 +70,10 @@ class WaveDavePDF(fpdf.FPDF):
         self.project = "Project"
         self.author = "Author"
 
+        self.local_timezone = 0  # relative to UTC
+
         # if on windows, add arial font
-        if False and os.name == "nt":
+        if os.name == "nt":
             self.add_font("arial", "", fname = "c:/windows/fonts/arial.ttf")
             self.add_font("arial", "I", fname = "c:/windows/fonts/ariali.ttf")
             self.add_font("arial", "B", fname = "c:/windows/fonts/arialbd.ttf")
@@ -89,7 +91,6 @@ class WaveDavePDF(fpdf.FPDF):
     def header(self):
         # draw revision and date on right side
         with self.use_font_face(FontFace(family='arial', color=(0, 0, 0), emphasis="I", size_pt=8)):
-
 
             self.set_x(-50)
             self.set_y(2)
@@ -141,10 +142,16 @@ class WaveDavePDF(fpdf.FPDF):
 
     def produce(self):
 
+        local_timezone = self.local_timezone or Settings.LOCAL_TIMEZONE
+
         self.add_page(format="a4")
 
         for section in self.sections:
-            section.generate_pdf(self)
+            # pass local_timezone if the sections "generate_pdf" method accepts it
+            try:
+                section.generate_pdf(self, local_timezone)
+            except TypeError:
+                section.generate_pdf(self)
 
         self._produced = True
 

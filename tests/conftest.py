@@ -25,7 +25,7 @@ def jonswap_hs35_tp10_from_45():
     import waveresponse as wr
 
     freq = np.arange(0.01, 1, 0.01)
-    dirs = np.linspace(0.0, 360.0, endpoint=False)
+    dirs = np.linspace(0.0, 360.0, num=35, endpoint=False)
     hs = 3.5
     tp = 10.0
     dirp = 45.0

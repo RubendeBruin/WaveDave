@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 from enum import Enum
 import matplotlib.pyplot as plt
 import numpy as np
@@ -40,10 +40,19 @@ class Event:
     when: datetime
 
     def __post_init__(self):
-        assert isinstance(self.when, datetime), "when must be a datetime object, for example datetime(2024, 7, 26,12,0,0)"
+        assert isinstance(
+            self.when, datetime
+        ), "when must be a datetime object, for example datetime(2024, 7, 26,12,0,0)"
         assert isinstance(self.description, str), "description must be a string"
 
-    def render(self, ax, text=True):
+    def render(self, ax, text=True, local_timezone=None):
+        """Note: events are defined in the local timezone!"""
+
+        if local_timezone is not None:
+            raise ValueError(
+                "local_timezone is not used in Events, events are supposed to be defined in the local timezone."
+            )
+
         x = self.when
         ax.axvline(x=self.when, color="k", linestyle="--", linewidth=1)
 
@@ -72,10 +81,12 @@ class Limit:
     value: float
 
     def __post_init__(self):
-        assert isinstance(self.value, (float,int)), f"value must be a number, for example 1.5, got {self.value}"
+        assert isinstance(
+            self.value, (float, int)
+        ), f"value must be a number, for example 1.5, got {self.value}"
         assert isinstance(self.description, str), "description must be a string"
 
-    def render(self, ax):
+    def render(self, ax, local_timezone=None):
         ax.axhline(self.value, color="k", linestyle="--", linewidth=1)
 
         xx = ax.get_xlim()
@@ -131,12 +142,19 @@ class LineSource:
         assert isinstance(self.y[0], (int, float)), "y must be a list of numbers"
         assert isinstance(self.label, str), "label must be a string"
         assert isinstance(self.unit, str), "unit must be a string"
-        assert isinstance(self.statistics_type, StatisticsType), "statistics_type must be a StatisticsType"
-        assert isinstance(self.dir_plot_spacing, int), "dir_plot_spacing must be an integer"
+        assert isinstance(
+            self.statistics_type, StatisticsType
+        ), "statistics_type must be a StatisticsType"
+        assert isinstance(
+            self.dir_plot_spacing, int
+        ), "dir_plot_spacing must be an integer"
         assert isinstance(self.color, (tuple, str)), "color must be a tuple or a string"
-        assert isinstance(self.marker, (str, type(None))), "marker must be a string or None"
-        assert isinstance(self.plotspec, (dict, type(None))), "plotspec must be a dictionary or None"
-
+        assert isinstance(
+            self.marker, (str, type(None))
+        ), "marker must be a string or None"
+        assert isinstance(
+            self.plotspec, (dict, type(None))
+        ), "plotspec must be a dictionary or None"
 
     @property
     def label_full_context(self):
@@ -156,7 +174,10 @@ class LineSource:
         0 = fully present, 1 = fully faded."""
         self.color = faded_line_color(factor, self.color)
 
-    def render(self, ax):
+    def render(self, ax, local_timezone=None):
+        if local_timezone is None:
+            local_timezone = Settings.LOCAL_TIMEZONE
+
         if self.plotspec is None:
             self.plotspec = dict()
 
@@ -169,12 +190,14 @@ class LineSource:
             self.plotspec["color"] = self.color
             self.plotspec["linewidth"] = 1
 
-        ax.plot(self.x, self.y, label=self.label, **self.plotspec)
+        local_x = [x + timedelta(hours=local_timezone) for x in self.x]
+
+        ax.plot(local_x, self.y, label=self.label, **self.plotspec)
 
         if self.direction:
-            self._render_quiver(ax)
+            self._render_quiver(ax, local_x)
 
-    def _render_quiver(self, ax):
+    def _render_quiver(self, ax, local_x):
         qx = []
         qy = []
         qu = []
@@ -182,7 +205,7 @@ class LineSource:
         q_scale = 40
 
         for i in range(0, len(self.x), self.dir_plot_spacing):
-            qx.append(self.x[i])
+            qx.append(local_x[i])
             qy.append(self.y[i])
             qu.append(-np.sin(np.radians(self.direction[i])))
             qv.append(-np.cos(np.radians(self.direction[i])))
@@ -195,8 +218,8 @@ class LineSource:
             angles="xy",
             scale_units="width",
             headaxislength=3,
-            headlength=10,
-            headwidth=6,
+            headlength=5,
+            headwidth=5,
             minlength=0.1,
             scale=q_scale,
             width=0.002,
@@ -214,19 +237,39 @@ class Graph:
     ymin: float or None = 0.0  # by default y starts at 0, set to None to auto-scale
     ymax: float or None = None  # enforce y-lim
 
-    limit: Limit or None = None
+    limit: list[Limit] or None = None
 
     def __post_init__(self):
         """Executed after init"""
         if isinstance(self.source, LineSource):
             self.source = [self.source]
 
-        assert isinstance(self.source, (list, tuple)), "source must be a list of LineSource objects"
-        assert isinstance(self.source[0], LineSource), f"source must be a list of LineSource objects, got: {type(self.source[0])}"
-        assert isinstance(self.title, (str, type(None))), "title must be a string or None"
-        assert isinstance(self.ymin, (float, type(None))), "ymin must be a float or None"
-        assert isinstance(self.ymax, (float, type(None))), "ymax must be a float or None"
-        assert isinstance(self.limit, (Limit, type(None))), f"limit must be a Limit object or None, got {type(self.limit)}"
+        if isinstance(self.limit, Limit):
+            self.limit = [self.limit]
+
+        assert isinstance(
+            self.source, (list, tuple)
+        ), "source must be a list of LineSource objects"
+        assert isinstance(
+            self.source[0], LineSource
+        ), f"source must be a list of LineSource objects, got: {type(self.source[0])}"
+        assert isinstance(
+            self.title, (str, type(None))
+        ), "title must be a string or None"
+        assert isinstance(
+            self.ymin, (float, type(None))
+        ), "ymin must be a float or None"
+        assert isinstance(
+            self.ymax, (float, type(None))
+        ), "ymax must be a float or None"
+        if isinstance(self.limit, list):
+            for l in self.limit:
+                assert isinstance(
+                    l, Limit
+                ), f"limit must be a list of Limit objects, got {type(l)}"
+        assert isinstance(
+            self.limit, (list, type(None))
+        ), f"limit must be a list of Limit objects or None, got {type(self.limit)}"
 
         # check that all sources have the same statistics type
         st = self.source[0].statistics_type
@@ -242,15 +285,16 @@ class Graph:
                 s.unit == unit
             ), f"All sources must have the same unit. Source 0 has unit: {unit} and source {self.source.index(s)} has unit: { s.unit }."
 
-    def render(self, ax):
+    def render(self, ax, local_timezone):
         for source in self.source:
-            source.render(ax)
+            source.render(ax, local_timezone)
 
         title = self.title or self.source[0].label
         ax.set_title(title)
 
         if self.limit:
-            self.limit.render(ax)
+            for limit in self.limit:
+                limit.render(ax, local_timezone)
 
         ax.set_ylabel(self.source[0].unit)
         ax.set_ylim(bottom=self.ymin, top=self.ymax)
@@ -261,7 +305,7 @@ class Figure(ToPDFMixin):
     graphs: Graph or list[Graph]
 
     events: list[Event] or None = None
-    share_x: SharedX = SharedX.NONE
+    share_x: SharedX or tuple[datetime, datetime] = SharedX.UNION
     share_y: bool = False  # share y-axis limits (union)
     legend: bool = False  # adds legend to the figure
     legend_force_full_context: bool = False  # legend = label + source description
@@ -275,19 +319,46 @@ class Figure(ToPDFMixin):
         if self.legend_force_full_context:
             self.legend = True
 
-        assert isinstance(self.graphs, (list, tuple)), "graphs must be a list of Graph objects"
-        assert isinstance(self.graphs[0], Graph), f"graphs must be a list of Graph objects, got: {type(self.graphs[0])}"
-        assert isinstance(self.events, (list, type(None))), "events must be a list of Event objects or None"
+        assert isinstance(
+            self.graphs, (list, tuple)
+        ), "graphs must be a list of Graph objects"
+        assert isinstance(
+            self.graphs[0], Graph
+        ), f"graphs must be a list of Graph objects, got: {type(self.graphs[0])}"
+        assert isinstance(
+            self.events, (list, type(None))
+        ), "events must be a list of Event objects or None"
         if self.events:
-            assert isinstance(self.events[0], Event), f"events must be a list of Event objects, got: {type(self.events[0])}"
-        assert isinstance(self.share_x, SharedX), "share_x must be a SharedX object"
+            assert isinstance(
+                self.events[0], Event
+            ), f"events must be a list of Event objects, got: {type(self.events[0])}"
+        if isinstance(self.share_x, tuple):
+            assert (
+                len(self.share_x) == 2
+            ), "share_x must be a tuple of two datetime objects or a SharedX object"
+            assert isinstance(
+                self.share_x[0], datetime
+            ), "share_x must be a tuple of two datetime objects"
+            assert isinstance(
+                self.share_x[1], datetime
+            ), "share_x must be a tuple of two datetime objects"
+        else:
+            assert isinstance(
+                self.share_x, SharedX
+            ), f"share_x must be a SharedX object or a tuple of two datetime objects, got {self.share_x} with type {type(self.share_x)}"
         assert isinstance(self.share_y, bool), "share_y must be a boolean"
         assert isinstance(self.legend, bool), "legend must be a boolean"
-        assert isinstance(self.legend_force_full_context, bool), "legend_force_full_context must be a boolean"
-        assert isinstance(self.figsize, (tuple, list)), "figsize must be a tuple or list"
+        assert isinstance(
+            self.legend_force_full_context, bool
+        ), "legend_force_full_context must be a boolean"
+        assert isinstance(
+            self.figsize, (tuple, list)
+        ), "figsize must be a tuple or list"
 
+    def render(self, local_timezone=None):
+        if local_timezone is None:
+            local_timezone = Settings.LOCAL_TIMEZONE
 
-    def render(self):
         n = len(self.graphs)
         fig, axes = plt.subplots(nrows=n, ncols=1, figsize=self.figsize)
 
@@ -295,7 +366,11 @@ class Figure(ToPDFMixin):
             axes = [axes]
 
         for graph, ax in zip(self.graphs, axes):
-            graph.render(ax)
+            graph.render(ax, local_timezone=local_timezone)
+
+        # set axis labels
+        for ax in axes:
+            ax.set_xlabel(f"Time [UTC+{local_timezone}]")
 
         if n > 1:
             # shared y
@@ -304,32 +379,36 @@ class Figure(ToPDFMixin):
                 axes = sync_yscales(axes)
 
             # shared x
-
-            if self.share_x == SharedX.UNION:
-                # get minimum and maximum x-values for all graphs
-                x_min = min([ax.get_xlim()[0] for ax in axes])
-                x_max = max([ax.get_xlim()[1] for ax in axes])
-
+            if isinstance(self.share_x, tuple):
                 for ax in axes:
-                    ax.set_xlim(x_min, x_max)
-
-            elif self.share_x == SharedX.INTERSECTION:
-                # get minimum and maximum x-values for all graphs
-                x_min = max([ax.get_xlim()[0] for ax in axes])
-                x_max = min([ax.get_xlim()[1] for ax in axes])
-
-                for ax in axes:
-                    ax.set_xlim(x_min, x_max)
+                    ax.set_xlim(self.share_x)
 
             else:
-                pass  # keep the individual x-limits
+                if self.share_x == SharedX.UNION:
+                    # get minimum and maximum x-values for all graphs
+                    x_min = min([ax.get_xlim()[0] for ax in axes])
+                    x_max = max([ax.get_xlim()[1] for ax in axes])
+
+                    for ax in axes:
+                        ax.set_xlim(x_min, x_max)
+
+                elif self.share_x == SharedX.INTERSECTION:
+                    # get minimum and maximum x-values for all graphs
+                    x_min = max([ax.get_xlim()[0] for ax in axes])
+                    x_max = min([ax.get_xlim()[1] for ax in axes])
+
+                    for ax in axes:
+                        ax.set_xlim(x_min, x_max)
+
+                else:
+                    pass  # keep the individual x-limits
 
         # legend
         if self.legend:
             ax = axes[-1]
             handles, labels = ax.get_legend_handles_labels()
 
-            # if all labels are the same, then replace then with the source label
+            # if all labels are the same, then replace them with the source label
             if len(set(labels)) == 1:
                 labels = [
                     source.datasource_description for source in self.graphs[0].source
@@ -359,7 +438,7 @@ class Figure(ToPDFMixin):
         return fig
 
     def generate_pdf(self, report: WaveDavePDF):
-        fig = self.render()
+        fig = self.render(local_timezone=report.local_timezone)
 
         # save to svg and add to report
         filename = report.temp_folder / "figure.svg"
@@ -375,9 +454,9 @@ if __name__ == "__main__":
         datetime(2024, 3, 10, 10, 0, 0),
     ]
 
-    line1 = LineSource(label="Forecast", x=times, y=[1, 4, 2])
+    line1 = LineSource(label="Forecast", x=times, y=[1, 4, 2], unit="m")
 
-    line2 = LineSource(label="Forecast", x=times, y=[1, 3, 2], color="r")
+    line2 = LineSource(label="Forecast", x=times, y=[1, 3, 2], color="r", unit="m")
 
     events = [
         Event(description="Breakfast", when=times[0]),
@@ -386,22 +465,24 @@ if __name__ == "__main__":
     ]
 
     limit_Hs = Limit("Max for personel transfer", 1.5)
+    limit_Tea = Limit("Max for tea on deck", 2.5)
 
     import wavedave.settings as Settings
+
     Settings.DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 
     graph = Graph(title="Wave height", source=[line1, line2])
 
-    graph2 = Graph(title="Wave height", source=line1, limit=limit_Hs)
+    graph2 = Graph(title="Wave height", source=line1, limit=[limit_Hs, limit_Tea])
 
     figure = Figure(
         graphs=[graph, graph2],
         events=events,
-        share_x=SharedX.UNION,
+        share_x=(datetime(2024, 3, 10, 0, 0, 0), datetime(2024, 3, 12, 10, 0, 0)),
         share_y=True,
         legend=True,
         figsize=(10, 5),
     )
 
-    figure.render()
+    figure.render(local_timezone=7)
     plt.show()

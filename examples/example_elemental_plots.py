@@ -107,13 +107,14 @@ bedtime = Event(description="Bedtime",
 
 # limits
 too_hot = Limit("Max temperature", 15)
+too_cold = Limit("Min temperature", 8)
 wind = Limit("Max wind", 10)
 
 # limits are added to Graphs
 # events are added to a Figure
 
 wind_with_limit = Graph(source = wind10, limit = wind)
-temperature_with_limit = Graph(source = temperature, limit=too_hot)
+temperature_with_limit = Graph(source = temperature, limit=[too_hot, too_cold])
 
 fig7 = Figure([wind_with_limit, temperature_with_limit], events = [breakfast, lunch, dinner, bedtime])
 
@@ -153,5 +154,6 @@ report.add_text("Events are added per Figure. They are identical for all graphs 
 
 report.add(fig7)
 
+report.local_timezone = 7
 
 report.open()
