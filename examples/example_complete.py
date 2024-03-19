@@ -217,5 +217,5 @@ report.add(
     )
 )
 
-
+report.local_timezone = 1
 report.open()

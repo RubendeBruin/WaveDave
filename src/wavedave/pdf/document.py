@@ -94,7 +94,7 @@ class WaveDavePDF(fpdf.FPDF):
 
             self.set_x(-50)
             self.set_y(2)
-            self.multi_cell(w=0, h=self.fontsize, txt=self.title + ' - ' + str(self.date), align="R")
+            self.multi_cell(w=0, h=self.fontsize, text=self.title + ' - ' + str(self.date), align="R")
 
             self.set_fill_color((0, 0, 0))
 
@@ -106,15 +106,15 @@ class WaveDavePDF(fpdf.FPDF):
 
             # Add a page number
             page = "PAGE " + str(self.page_no()) + "/{nb}"
-            self.cell(w=0, h=5, txt=page, align="C")
+            self.cell(w=0, h=5, text=page, align="C")
 
             # Add number, project and author
             self.set_x(self.l_margin)
             self.set_y(-14)
-            self.cell(w=0, h=5, txt=self.project, align="L")
+            self.cell(w=0, h=5, text=self.project, align="L")
             self.set_y(-10)
             self.set_x(self.l_margin)
-            self.cell(w=0, h=5, txt="by: " + self.author, align="L")
+            self.cell(w=0, h=5, text="by: " + self.author, align="L")
 
         # Add the logo
 
