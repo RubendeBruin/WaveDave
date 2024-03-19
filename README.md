@@ -308,6 +308,13 @@ A `LineSource` can be created from Spectra, Responses, IntegratedForecasts, Meas
 - Spectra
   - give_source
 
+# TimeSeries
+
+A `TimeSeries` is a series of measurements or calculated values over time.
+It has methods to calculate and plot the energy and the energy over time using wavelets and spectral density.
+
+# RAO
+RAO extends waveresponse.RAO and adds some convenience methods for plotting, loading and saving as well as some meta-data.
 
 
 # References
